@@ -20,7 +20,7 @@ namespace lat
 
     enum class LuaStatus : int
     {
-        Ok = LUA_OK,
+        Ok = 0,
         Yield = LUA_YIELD,
         RuntimeError = LUA_ERRRUN,
         SyntaxError = LUA_ERRSYNTAX,

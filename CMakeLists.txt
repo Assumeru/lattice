@@ -11,9 +11,9 @@ set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/)
 option(USE_LUAJIT "Use LuaJit" TRUE)
 if(USE_LUAJIT)
     find_package(LuaJit REQUIRED)
-else(USE_LUAJIT)
+else()
     find_package(Lua REQUIRED)
-endif(USE_LUAJIT)
+endif()
 
 if(NOT TARGET Lua::Lua)
     add_library(Lua::Lua INTERFACE IMPORTED)
@@ -23,6 +23,12 @@ if(NOT TARGET Lua::Lua)
             INTERFACE_INCLUDE_DIRECTORIES "${LUA_INCLUDE_DIR}"
             INTERFACE_LINK_LIBRARIES "${LUA_LIBRARIES}"
     )
+endif()
+
+if (MSVC)
+    add_compile_definitions(/WX /W4)
+else()
+    add_compile_definitions(-Werror -Wall)
 endif()
 
 add_subdirectory(lattice)

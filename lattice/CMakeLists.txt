@@ -7,6 +7,7 @@ target_sources(LibLattice
         functionref.hpp
         stack.cpp
         state.cpp
+        lua/api.cpp
     PUBLIC
         FILE_SET HEADERS
         FILES

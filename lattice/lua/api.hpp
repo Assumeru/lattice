@@ -207,7 +207,31 @@ namespace lat
 
         [[nodiscard]] int yield(int numResults) const noexcept { return lua_yield(mState, numResults); }
 
+        lua_Hook getDebugHook() const noexcept { return lua_gethook(mState); }
+
+        int getDebugHookInterval() const noexcept { return lua_gethookcount(mState); }
+
+        LuaHookMask getDebugHookMask() const noexcept { return static_cast<LuaHookMask>(lua_gethookmask(mState)); }
+
+        bool getInvocationDebugInfo(LuaInfo what, lua_Debug& activationRecord);
+        bool getFunctionDebugInfo(LuaInfo what, lua_Debug& activationRecord);
+
+        const char* getLocalVariable(lua_Debug& activationRecord, int variable) const noexcept
+        {
+            return lua_getlocal(mState, &activationRecord, variable);
+        }
+
+        bool getStack(int level, lua_Debug& activationRecord) const noexcept
+        {
+            return lua_getstack(mState, level, &activationRecord);
+        }
+
         // const char* getupvalue(int funcindex, int n) const noexcept { return lua_getupvalue(mState, funcindex, n); }
+
+        void setDebugHook(lua_Hook hook, LuaHookMask mask, int count) const noexcept
+        {
+            lua_sethook(mState, hook, static_cast<int>(mask), count);
+        }
 
         // const char* setupvalue(int funcindex, int n) const noexcept { return lua_setupvalue(mState, funcindex, n); }
 

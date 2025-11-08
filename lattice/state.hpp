@@ -6,17 +6,21 @@
 #include <cstddef>
 #include <memory>
 
+struct lua_Debug;
+
 namespace lat
 {
     template <class UserData>
     using Allocator = void* (*)(UserData*, void*, std::size_t, std::size_t);
 
     class Stack;
+    enum class LuaHookMask : int;
 
     // Owning lua_State wrapper.
     class State
     {
-        std::unique_ptr<Stack> mStack;
+        struct MainStack;
+        std::unique_ptr<MainStack> mState;
 
     public:
         State();
@@ -31,6 +35,9 @@ namespace lat
         ~State();
 
         void withStack(FunctionRef<void(Stack&)>) const;
+
+        void setDebugHook(FunctionRef<void(Stack&, lua_Debug&)> hook, LuaHookMask mask, int count = 0) const;
+        void disableDebugHook() const;
     };
 }
 

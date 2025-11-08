@@ -5,31 +5,33 @@
 #include <type_traits>
 #include <utility>
 
+#include "stack.hpp"
+
 namespace lat
 {
     static_assert(std::is_same_v<lua_Alloc, Allocator<void>>);
 
     State::State()
     {
-        mState = luaL_newstate();
+        mStack = std::make_unique<Stack>(luaL_newstate());
     }
 
     State::State(Allocator<void> allocator, void* userData)
     {
-        mState = lua_newstate(allocator, userData);
-    }
-
-    State::State(State&& state)
-    {
-        std::swap(mState, state.mState);
+        mStack = std::make_unique<Stack>(lua_newstate(allocator, userData));
     }
 
     State::~State()
     {
-        if (mState)
+        if (mStack)
         {
-            lua_close(mState);
-            mState = nullptr;
+            lua_close(mStack->mState);
+            mStack = nullptr;
         }
+    }
+
+    void State::withStack(FunctionRef<void(Stack&)> function) const
+    {
+        return mStack->call(function);
     }
 }

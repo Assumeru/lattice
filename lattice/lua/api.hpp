@@ -14,10 +14,13 @@ namespace lat
     {
         lua_State* mState;
 
+        LuaApi(LuaApi&&) = delete;
+        LuaApi(const LuaApi&) = delete;
+
         int gc(int what, int data) { return lua_gc(mState, what, data); }
 
     public:
-        LuaApi(lua_State& state)
+        explicit LuaApi(lua_State& state)
             : mState(&state)
         {
         }
@@ -208,9 +211,9 @@ namespace lat
 
         // const char* setupvalue(int funcindex, int n) const noexcept { return lua_setupvalue(mState, funcindex, n); }
 
-        [[noreturn]] int raiseArgumentError(int argPos, const char* extramsg)
+        [[noreturn]] void raiseArgumentError(int argPos, const char* extramsg)
         {
-            return luaL_argerror(mState, argPos, extramsg);
+            luaL_argerror(mState, argPos, extramsg);
         }
 
         bool callMetamethod(int obj, const char* key) { return luaL_callmeta(mState, obj, key); }
@@ -265,9 +268,9 @@ namespace lat
 
         int createReferenceIn(int table) { return luaL_ref(mState, table); }
 
-        [[noreturn]] int raiseArgumentTypeError(int argPos, const char* expected)
+        [[noreturn]] void raiseArgumentTypeError(int argPos, const char* expected)
         {
-            return luaL_typerror(mState, argPos, expected);
+            luaL_typerror(mState, argPos, expected);
         }
 
         void removeReferenceFrom(int table, int ref) const noexcept { luaL_unref(mState, table, ref); }

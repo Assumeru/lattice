@@ -1,4 +1,5 @@
 #include <lua/api.hpp>
+#include <stack.hpp>
 #include <state.hpp>
 
 #include <iostream>
@@ -30,38 +31,14 @@ int main(int, const char**)
 {
     AllocatorData allocatorData;
     lat::State state(allocate, &allocatorData);
-    lat::LuaApi api(*state.get());
-
-    api.runGarbageCollector();
-    std::cout << "Stack size: " << api.getStackSize() << '\n';
-    // api.setStackSize(1);
-    std::cout << "Stack size: " << api.getStackSize() << '\n';
-    // allocatorData.mBlock = true;
-    auto status = api.protectedCall(
-        [](lua_State* s) -> int {
-            lat::LuaApi pState(*s);
-            lua_State* main = static_cast<lua_State*>(pState.asUserData(-1));
-            std::cout << "Protected state equals main state: " << (s == main) << '\n';
-            std::cout << "PStack size: " << pState.getStackSize() << '\n';
-            
-            return 0;
-        },
-        state.get());
-    std::cout << "Status: " << static_cast<int>(status) << '\n';
-    if (status != lat::LuaStatus::Ok)
-        return 0;
-
-    constexpr int toPush = LUA_MINSTACK * 20;
-    allocatorData.mStackSize = api.getStackSize();
-    std::cout << "Stack size: " << api.getStackSize() << '\n';
-    for (int i = 0; i < toPush; ++i)
+    try
     {
-        api.pushInteger(i);
-        allocatorData.mStackSize = api.getStackSize();
+        state.withStack([](lat::Stack& stack){
+            stack.ensure(LUAI_MAXCSTACK * 2);
+        });
     }
-    std::cout << "\nStack size: " << api.getStackSize() << '\n';
-    for (int i = 1; i <= toPush; ++i)
+    catch (const std::exception& e)
     {
-        std::cout << "Int at " << i << ": " << api.asInteger(-i) << '\n';
+        std::cout << "Exception " << e.what() << '\n';
     }
 }

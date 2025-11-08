@@ -26,9 +26,9 @@ if(NOT TARGET Lua::Lua)
 endif()
 
 if (MSVC)
-    add_compile_definitions(/WX /W4)
+    add_compile_options(/WX /W4)
 else()
-    add_compile_definitions(-Werror -Wall)
+    add_compile_options(-Werror -Wall)
 endif()
 
 add_subdirectory(lattice)

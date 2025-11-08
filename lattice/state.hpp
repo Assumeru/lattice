@@ -1,25 +1,26 @@
 #ifndef LATTICE_STATE_H
 #define LATTICE_STATE_H
 
-#include <cstddef>
+#include "functionref.hpp"
 
-struct lua_State;
+#include <cstddef>
+#include <memory>
 
 namespace lat
 {
     template <class UserData>
     using Allocator = void* (*)(UserData*, void*, std::size_t, std::size_t);
 
+    class Stack;
+
+    // Owning lua_State wrapper.
     class State
     {
-        lua_State* mState = nullptr;
-
-        State(const State&) = delete;
+        std::unique_ptr<Stack> mStack;
 
     public:
         State();
         State(Allocator<void>, void*);
-        State(State&&);
 
         template <class UserData>
         State(Allocator<UserData> allocator, UserData* userData)
@@ -29,7 +30,7 @@ namespace lat
 
         ~State();
 
-        lua_State* get() const { return mState; }
+        void withStack(FunctionRef<void(Stack&)>) const;
     };
 }
 

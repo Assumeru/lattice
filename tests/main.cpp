@@ -33,8 +33,13 @@ int main(int, const char**)
     lat::State state(allocate, &allocatorData);
     try
     {
-        state.withStack([](lat::Stack& stack){
-            stack.ensure(LUAI_MAXCSTACK * 2);
+        state.withStack([](lat::Stack& stack) {
+            constexpr std::string_view code = "return 1+1";
+            stack.pushFunction(code);
+            lat::LuaApi api(*stack.get());
+            api.call(0, 1);
+            lua_Number output = api.asNumber(-1);
+            std::cout << code << " = " << output << '\n';
         });
     }
     catch (const std::exception& e)

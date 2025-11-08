@@ -4,6 +4,7 @@
 #include "functionref.hpp"
 
 #include <cstdint>
+#include <string_view>
 
 struct lua_State;
 
@@ -34,6 +35,8 @@ namespace lat
         void collectGarbage();
 
         int getTop() const;
+
+        void pushFunction(std::string_view lua, const char* name = "");
 
         // TODO remove
         lua_State* get() { return mState; }

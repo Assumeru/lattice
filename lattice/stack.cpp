@@ -5,20 +5,10 @@
 #include <new>
 #include <stdexcept>
 
-#ifdef LUAI_MAXCSTACK
-#include <limits>
-static_assert(std::numeric_limits<std::uint16_t>::max() >= LUAI_MAXCSTACK);
-#endif
-
 #include "lua/api.hpp"
-
-#include <iostream>
 
 namespace
 {
-    constexpr std::uint16_t allocationOverhead = 3;
-    constexpr std::uint16_t initialSize = LUA_MINSTACK - allocationOverhead;
-
     [[noreturn]] void throwLuaError(lat::LuaApi& lua, const char* fallback)
     {
         if (!lua.isNone(-1) && lua.isString(-1))
@@ -83,15 +73,15 @@ namespace lat
         switch (status)
         {
             case LuaStatus::ErrorHandlingError:
-                throwLuaError(lua, "Lua error handler failed");
+                throwLuaError(lua, "error handler failed");
             case LuaStatus::MemoryError:
-                throwLuaError(lua, "Lua out of memory");
+                throwLuaError(lua, "out of memory");
             case LuaStatus::RuntimeError:
-                throwLuaError(lua, "Lua error");
+                throwLuaError(lua, "error");
             case LuaStatus::Ok:
                 return;
             default:
-                throw std::logic_error("invalid Lua state");
+                throw std::logic_error("invalid state");
         }
     }
 
@@ -109,5 +99,25 @@ namespace lat
     int Stack::getTop() const
     {
         return api().getStackSize();
+    }
+
+    void Stack::pushFunction(std::string_view script, const char* name)
+    {
+        if (script.starts_with(LUA_SIGNATURE[0]))
+            throw std::invalid_argument("argument cannot be bytecode");
+        ensure(1);
+        LuaApi lua = api();
+        LuaStatus status = lua.loadFunction(script, name);
+        switch (status)
+        {
+            case LuaStatus::SyntaxError:
+                throwLuaError(lua, "syntax error");
+            case LuaStatus::MemoryError:
+                throwLuaError(lua, "out of memory");
+            case LuaStatus::Ok:
+                return;
+            default:
+                throw std::logic_error("invalid state");
+        }
     }
 }

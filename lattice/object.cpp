@@ -3,6 +3,8 @@
 #include "lua/api.hpp"
 #include "stack.hpp"
 
+#include <stdexcept>
+
 namespace lat
 {
     bool ObjectView::isNil() const
@@ -20,7 +22,7 @@ namespace lat
         LuaApi api = mStack.api();
         bool value = api.asBoolean(mIndex);
         if (!value && !api.isBoolean(mIndex))
-            throw std::bad_optional_access();
+            throw std::runtime_error("value is not a boolean");
         return value;
     }
 
@@ -29,7 +31,7 @@ namespace lat
         LuaApi api = mStack.api();
         lua_Integer value = api.asInteger(mIndex);
         if (value == 0 && !api.isNumber(mIndex))
-            throw std::bad_optional_access();
+            throw std::runtime_error("value is not an integer");
         return value;
     }
 
@@ -38,7 +40,7 @@ namespace lat
         LuaApi api = mStack.api();
         lua_Number value = api.asNumber(mIndex);
         if (value == 0. && !api.isNumber(mIndex))
-            throw std::bad_optional_access();
+            throw std::runtime_error("value is not a number");
         return value;
     }
 
@@ -47,6 +49,37 @@ namespace lat
         LuaApi api = mStack.api();
         if (api.isString(mIndex))
             return api.toString(mIndex);
-        throw std::bad_optional_access();
+        throw std::runtime_error("value is not a string");
+    }
+
+    namespace
+    {
+        template <class K>
+        using KeyPusher = void (LuaApi::*)(K);
+
+        template <class K>
+        ObjectView getTableValue(Stack& stack, LuaApi api, int table, K&& key, KeyPusher<K> pusher)
+        {
+            LuaType type = api.getType(table);
+            if (type != LuaType::Table)
+                throw std::runtime_error("value is not a table");
+            stack.ensure(1);
+            api.(*pusher)(key);
+            api.pushTableValue(table);
+            return stack.getObject(-1);
+        }
+    }
+
+    ObjectView ObjectView::operator[](std::string_view key)
+    {
+        return getTableValue(mStack, mStack.api(), mIndex, key, LuaApi::pushString);
+    }
+    ObjectView ObjectView::operator[](lua_Integer index)
+    {
+        return getTableValue(mStack, mStack.api(), mIndex, index, LuaApi::pushInteger);
+    }
+    ObjectView ObjectView::operator[](const ObjectView& key)
+    {
+        return getTableValue(mStack, mStack.api(), mIndex, key.mIndex, LuaApi::pushCopy);
     }
 }

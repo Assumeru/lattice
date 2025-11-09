@@ -28,12 +28,41 @@ namespace lat
         }
 
         bool isNil() const;
+        bool isBoolean() const;
+        bool isNumber() const;
+        bool isString() const;
+        bool isTable() const;
         LuaType getType() const;
 
         bool asBool() const;
         std::ptrdiff_t asInt() const;
         double asFloat() const;
         std::string_view asString() const;
+
+        template <class T>
+        bool is() const
+        {
+            if constexpr (std::is_same_v<T, bool>)
+            {
+                return isBoolean();
+            }
+            else if constexpr (std::is_arithmetic_v<T>)
+            {
+                return isNumber();
+            }
+            else if constexpr (std::is_same_v<T, std::string_view>)
+            {
+                return isString();
+            }
+            else if constexpr (std::is_same_v<T, std::string>)
+            {
+                return isString();
+            }
+            else
+            {
+                static_assert(false);
+            }
+        }
 
         template <class T>
         T as() const
@@ -60,9 +89,9 @@ namespace lat
             }
             else if constexpr (isOptional<T>)
             {
-                if (isNil())
+                if (!is<typename T::value_type>())
                     return {};
-                return as<V>();
+                return as<typename T::value_type>();
             }
             else
             {

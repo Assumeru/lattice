@@ -12,6 +12,26 @@ namespace lat
         return mStack.isNil(mIndex);
     }
 
+    bool ObjectView::isBoolean() const
+    {
+        return mStack.isBoolean(mIndex);
+    }
+
+    bool ObjectView::isNumber() const
+    {
+        return mStack.isNumber(mIndex);
+    }
+
+    bool ObjectView::isString() const
+    {
+        return mStack.isString(mIndex);
+    }
+
+    bool ObjectView::isTable() const
+    {
+        return mStack.isTable(mIndex);
+    }
+
     LuaType ObjectView::getType() const
     {
         return mStack.api().getType(mIndex);
@@ -54,17 +74,14 @@ namespace lat
 
     namespace
     {
-        template <class K>
-        using KeyPusher = void (LuaApi::*)(K);
-
-        template <class K>
-        ObjectView getTableValue(Stack& stack, LuaApi api, int table, K&& key, KeyPusher<K> pusher)
+        template <class K, class F>
+        ObjectView getTableValue(Stack& stack, LuaApi api, int table, K key, F pusher)
         {
             LuaType type = api.getType(table);
             if (type != LuaType::Table)
                 throw std::runtime_error("value is not a table");
             stack.ensure(1);
-            api.(*pusher)(key);
+            (api.*pusher)(key);
             api.pushTableValue(table);
             return stack.getObject(-1);
         }
@@ -72,14 +89,16 @@ namespace lat
 
     ObjectView ObjectView::operator[](std::string_view key)
     {
-        return getTableValue(mStack, mStack.api(), mIndex, key, LuaApi::pushString);
+        return getTableValue(mStack, mStack.api(), mIndex, key, &LuaApi::pushString);
     }
+
     ObjectView ObjectView::operator[](lua_Integer index)
     {
-        return getTableValue(mStack, mStack.api(), mIndex, index, LuaApi::pushInteger);
+        return getTableValue(mStack, mStack.api(), mIndex, index, &LuaApi::pushInteger);
     }
+
     ObjectView ObjectView::operator[](const ObjectView& key)
     {
-        return getTableValue(mStack, mStack.api(), mIndex, key.mIndex, LuaApi::pushCopy);
+        return getTableValue(mStack, mStack.api(), mIndex, key.mIndex, &LuaApi::pushCopy);
     }
 }

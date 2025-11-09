@@ -39,15 +39,13 @@ int main(int, const char**)
         constexpr std::array<lat::Library, 1> toLoad{ lat::Library::String };
         state.loadLibraries(toLoad);
         state.withStack([](lat::Stack& stack) {
-            constexpr std::string_view code = "return string == nil";
+            constexpr std::string_view code = "return { a = 2, [2] = 'c' }";
             stack.pushFunction(code);
             lat::LuaApi api(*stack.get());
             api.call(0, 1);
             auto object = stack.getObject(-1);
-            if (auto optional = object.as<std::optional<bool>>())
-                std::cout << "optional is bool " << *optional << '\n';
-            if (auto optional = object.as<std::optional<std::string>>())
-                std::cout << "optional is string " << *optional << '\n';
+            std::cout << "a = " << object["a"].as<int>() << '\n';
+            std::cout << "2 = " << object[object["a"]].as<std::string_view>() << '\n';
         });
     }
     catch (const std::exception& e)

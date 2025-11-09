@@ -23,9 +23,12 @@ namespace lat
         MainStack(lua_State* state)
             : mStack(state)
         {
-            LuaApi api = mStack.api();
-            api.pushLightUserData(this);
-            api.setGlobalValue(globalName);
+            mStack.protectedCall(
+                [](lua_State* state) {
+                    LuaApi(*state).setGlobalValue(globalName);
+                    return 0;
+                },
+                this);
         }
 
         void callDebugHook(lua_Debug* activationRecord)

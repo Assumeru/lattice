@@ -27,6 +27,7 @@ namespace lat
         const LuaApi api() const;
 
         void call(FunctionRef<void(Stack&)>);
+        void protectedCall(int (*)(lua_State*), void*);
 
     public:
         explicit Stack(lua_State*);

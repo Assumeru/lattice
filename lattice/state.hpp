@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <span>
 
 struct lua_Debug;
 
@@ -16,6 +17,22 @@ namespace lat
     class Stack;
     struct MainStack;
     enum class LuaHookMask : int;
+
+    enum class Library
+    {
+        Base,
+        Package,
+        String,
+        Table,
+        Math,
+        IO,
+        OS,
+        Debug,
+        Bit,
+        JIT,
+        FFI,
+        StringBuffer,
+    };
 
     // Owning lua_State wrapper.
     class State
@@ -38,6 +55,8 @@ namespace lat
 
         void setDebugHook(FunctionRef<void(Stack&, lua_Debug&)> hook, LuaHookMask mask, int count = 0) const;
         void disableDebugHook() const;
+
+        void loadLibraries(std::span<const Library> = {}) const;
     };
 }
 

@@ -45,10 +45,28 @@ namespace lat
         return LuaApi(*mState);
     }
 
-    void Stack::call(FunctionRef<void(Stack&)> function)
+    void Stack::protectedCall(lua_CFunction function, void* userData)
     {
         LuaApi lua = api();
-        LuaStatus status = lua.protectedCall(
+        LuaStatus status = lua.protectedCall(function, userData);
+        switch (status)
+        {
+            case LuaStatus::ErrorHandlingError:
+                throwLuaError(lua, "error handler failed");
+            case LuaStatus::MemoryError:
+                throwLuaError(lua, "out of memory");
+            case LuaStatus::RuntimeError:
+                throwLuaError(lua, "error");
+            case LuaStatus::Ok:
+                return;
+            default:
+                throw std::logic_error("invalid state");
+        }
+    }
+
+    void Stack::call(FunctionRef<void(Stack&)> function)
+    {
+        protectedCall(
             [](lua_State* state) -> int {
                 LuaApi api(*state);
                 auto consumer = static_cast<FunctionRef<void(Stack&)>*>(api.asUserData(-1));
@@ -70,19 +88,6 @@ namespace lat
                 api.error();
             },
             &function);
-        switch (status)
-        {
-            case LuaStatus::ErrorHandlingError:
-                throwLuaError(lua, "error handler failed");
-            case LuaStatus::MemoryError:
-                throwLuaError(lua, "out of memory");
-            case LuaStatus::RuntimeError:
-                throwLuaError(lua, "error");
-            case LuaStatus::Ok:
-                return;
-            default:
-                throw std::logic_error("invalid state");
-        }
     }
 
     void Stack::ensure(std::uint16_t extra)

@@ -273,6 +273,8 @@ namespace lat
 
         bool createOrPushMetatable(const char* name) { return luaL_newmetatable(mState, name); }
 
+        void openAllLibraries() { luaL_openlibs(mState); }
+
         lua_Integer checkIntegerFunctionArgument(int argPos, lua_Integer fallback)
         {
             return luaL_optinteger(mState, argPos, fallback);

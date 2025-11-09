@@ -2,6 +2,7 @@
 #include <stack.hpp>
 #include <state.hpp>
 
+#include <array>
 #include <iostream>
 
 namespace
@@ -31,20 +32,17 @@ int main(int, const char**)
 {
     AllocatorData allocatorData;
     lat::State state(allocate, &allocatorData);
-    state.setDebugHook(
-        [](lat::Stack& stack, lua_Debug&) {
-            std::cout << "Called debug hook\n";
-            stack.ensure(LUAI_MAXCSTACK + 5);
-        },
-        lat::LuaHookMask::Count, 1);
+    state.setDebugHook([](lat::Stack&, lua_Debug&) { std::cout << "Called debug hook\n"; }, lat::LuaHookMask::Count, 2);
     try
     {
+        constexpr std::array<lat::Library, 1> toLoad{ lat::Library::String };
+        state.loadLibraries(toLoad);
         state.withStack([](lat::Stack& stack) {
-            constexpr std::string_view code = "return 1+1";
+            constexpr std::string_view code = "return string == nil";
             stack.pushFunction(code);
             lat::LuaApi api(*stack.get());
             api.call(0, 1);
-            lua_Number output = api.asNumber(-1);
+            auto output = api.asBoolean(-1);
             std::cout << code << " = " << output << '\n';
         });
     }

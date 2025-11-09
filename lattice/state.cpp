@@ -95,4 +95,72 @@ namespace lat
         mState->mDebugHook.reset();
         mState->mStack.api().setDebugHook(nullptr, LuaHookMask::None, 0);
     }
+
+    void State::loadLibraries(std::span<const Library> libraries) const
+    {
+        mState->mStack.protectedCall(
+            [](lua_State* state) {
+                LuaApi api(*state);
+                auto libs = *static_cast<std::span<const Library>*>(api.asUserData(-1));
+                api.pop(1);
+                if (libs.empty())
+                {
+                    api.openAllLibraries();
+                    return 0;
+                }
+                auto load = [&](auto f) {
+                    int pushed = f(state);
+                    if (pushed > 0)
+                        api.pop(pushed);
+                };
+                for (Library lib : libs)
+                {
+                    switch (lib)
+                    {
+                        case Library::Base:
+                            load(luaopen_base);
+                            break;
+                        case Library::Package:
+                            load(luaopen_package);
+                            break;
+                        case Library::String:
+                            load(luaopen_string);
+                            break;
+                        case Library::Table:
+                            load(luaopen_table);
+                            break;
+                        case Library::Math:
+                            load(luaopen_math);
+                            break;
+                        case Library::IO:
+                            load(luaopen_io);
+                            break;
+                        case Library::OS:
+                            load(luaopen_os);
+                            break;
+                        case Library::Debug:
+                            load(luaopen_debug);
+                            break;
+#ifdef LAT_LUAJIT
+                        case Library::Bit:
+                            load(luaopen_bit);
+                            break;
+                        case Library::JIT:
+                            load(luaopen_jit);
+                            break;
+                        case Library::FFI:
+                            load(luaopen_ffi);
+                            break;
+                        case Library::StringBuffer:
+                            load(luaopen_string_buffer);
+                            break;
+#endif
+                        default:
+                            break;
+                    }
+                }
+                return 0;
+            },
+            &libraries);
+    }
 }

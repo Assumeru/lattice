@@ -6,16 +6,16 @@
 #include <type_traits>
 #include <utility>
 
-#include "api/api.hpp"
+#include "lua/api.hpp"
 #include "stack.hpp"
 
 namespace lat
 {
     static_assert(std::is_same_v<lua_Alloc, Allocator<void>>);
 
-    struct State::MainStack
+    struct MainStack
     {
-        constexpr auto globalName = "lat.Main";
+        static constexpr auto globalName = "lat.Main";
 
         Stack mStack;
         std::optional<FunctionRef<void(Stack&, lua_Debug&)>> mDebugHook;
@@ -34,11 +34,7 @@ namespace lat
                 (*mDebugHook)(mStack, *activationRecord);
         }
 
-        ~MainStack()
-        {
-            lua_close(mStack->mState);
-            mStack = nullptr;
-        }
+        ~MainStack() { lua_close(mStack.mState); }
     };
 
     namespace
@@ -46,8 +42,8 @@ namespace lat
         void callDebugHook(lua_State* state, lua_Debug* activationRecord)
         {
             LuaApi api(*state);
-            api.pushGlobal(State::MainStack::globalName);
-            auto main = static_cast<State::MainStack*>(api.asUserData());
+            api.pushGlobal(MainStack::globalName);
+            auto main = static_cast<MainStack*>(api.asUserData(-1));
             api.pop(1);
             if (main == nullptr)
             {
@@ -56,7 +52,7 @@ namespace lat
             }
             try
             {
-                main.callDebugHook(activationRecord);
+                main->callDebugHook(activationRecord);
                 return;
             }
             catch (const std::exception& e)

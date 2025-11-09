@@ -41,12 +41,12 @@ namespace lat
 
     enum class LuaInfo : int
     {
-        FillName = 0x1,
-        FillSource = 0x10,
-        FillCurrentLine = 0x100,
-        FillNumUpValues = 0x1000,
-        PushFunction = 0x10000,
-        PushValidLines = 0x100000,
+        FillName = 0b1,
+        FillSource = 0b10,
+        FillCurrentLine = 0b100,
+        FillNumUpValues = 0b1000,
+        PushFunction = 0b10000,
+        PushValidLines = 0b100000,
     };
 
     template <class T>

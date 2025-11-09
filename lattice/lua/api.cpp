@@ -1,5 +1,7 @@
 #include "api.hpp"
 
+#include <string>
+
 namespace lat
 {
     namespace
@@ -28,12 +30,12 @@ namespace lat
     bool LuaApi::getInvocationDebugInfo(LuaInfo what, lua_Debug& activationRecord)
     {
         std::string whatString = getInfoWhere(what, false);
-        return lua_getinfo(mState, whatString, &activationRecord);
+        return lua_getinfo(mState, whatString.c_str(), &activationRecord);
     }
 
     bool LuaApi::getFunctionDebugInfo(LuaInfo what, lua_Debug& activationRecord)
     {
         std::string whatString = getInfoWhere(what, true);
-        return lua_getinfo(mState, whatString, &activationRecord);
+        return lua_getinfo(mState, whatString.c_str(), &activationRecord);
     }
 }

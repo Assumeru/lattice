@@ -31,6 +31,12 @@ int main(int, const char**)
 {
     AllocatorData allocatorData;
     lat::State state(allocate, &allocatorData);
+    state.setDebugHook(
+        [](lat::Stack& stack, lua_Debug&) {
+            std::cout << "Called debug hook\n";
+            stack.ensure(LUAI_MAXCSTACK + 5);
+        },
+        lat::LuaHookMask::Count, 1);
     try
     {
         state.withStack([](lat::Stack& stack) {

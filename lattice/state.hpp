@@ -14,12 +14,12 @@ namespace lat
     using Allocator = void* (*)(UserData*, void*, std::size_t, std::size_t);
 
     class Stack;
+    struct MainStack;
     enum class LuaHookMask : int;
 
     // Owning lua_State wrapper.
     class State
     {
-        struct MainStack;
         std::unique_ptr<MainStack> mState;
 
     public:

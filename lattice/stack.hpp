@@ -21,6 +21,7 @@ namespace lat
         Stack(Stack&&) = delete;
 
         friend class State;
+        friend struct MainStack;
 
         LuaApi api();
         const LuaApi api() const;

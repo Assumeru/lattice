@@ -6,6 +6,7 @@
 #include <stdexcept>
 
 #include "lua/api.hpp"
+#include "object.hpp"
 
 namespace
 {
@@ -104,6 +105,57 @@ namespace lat
     int Stack::getTop() const
     {
         return api().getStackSize();
+    }
+
+    void Stack::pop(std::uint16_t amount)
+    {
+        if (amount > 0)
+        {
+            LuaApi lua = api();
+            if (amount > lua.getStackSize())
+                throw std::invalid_argument("cannot pop more than stack size");
+            lua.pop(amount);
+        }
+    }
+
+    bool Stack::isBoolean(int index) const
+    {
+        return api().isBoolean(index);
+    }
+
+    bool Stack::isNil(int index) const
+    {
+        return api().isNil(index);
+    }
+
+    bool Stack::isNumber(int index) const
+    {
+        return api().isNumber(index);
+    }
+
+    bool Stack::isString(int index) const
+    {
+        return api().isString(index);
+    }
+
+    bool Stack::isTable(int index) const
+    {
+        return api().isTable(index);
+    }
+
+    ObjectView Stack::getObject(int index)
+    {
+        return tryGetObject(index).value();
+    }
+
+    std::optional<ObjectView> Stack::tryGetObject(int index)
+    {
+        LuaApi lua = api();
+        if (lua.isNone(index))
+            return {};
+        if (index < 0)
+            index = lua.getStackSize() + index + 1;
+        return ObjectView(*this, index);
     }
 
     void Stack::pushFunction(std::string_view script, const char* name)

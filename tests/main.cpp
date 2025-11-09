@@ -1,6 +1,7 @@
 #include <lua/api.hpp>
 #include <stack.hpp>
 #include <state.hpp>
+#include <object.hpp>
 
 #include <array>
 #include <iostream>
@@ -42,8 +43,11 @@ int main(int, const char**)
             stack.pushFunction(code);
             lat::LuaApi api(*stack.get());
             api.call(0, 1);
-            auto output = api.asBoolean(-1);
-            std::cout << code << " = " << output << '\n';
+            auto object = stack.getObject(-1);
+            if (auto optional = object.as<std::optional<bool>>())
+                std::cout << "optional is bool " << *optional << '\n';
+            if (auto optional = object.as<std::optional<std::string>>())
+                std::cout << "optional is string " << *optional << '\n';
         });
     }
     catch (const std::exception& e)

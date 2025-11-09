@@ -5,12 +5,14 @@
 
 #include <cstdint>
 #include <string_view>
+#include <optional>
 
 struct lua_State;
 
 namespace lat
 {
     class LuaApi;
+    class ObjectView;
 
     // Non-owning lua_State wrapper
     class Stack
@@ -22,6 +24,7 @@ namespace lat
 
         friend class State;
         friend struct MainStack;
+        friend class ObjectView;
 
         LuaApi api();
         const LuaApi api() const;
@@ -37,6 +40,17 @@ namespace lat
         void collectGarbage();
 
         int getTop() const;
+
+        void pop(std::uint16_t amount = 1);
+
+        bool isBoolean(int index) const;
+        bool isNil(int index) const;
+        bool isNumber(int index) const;
+        bool isString(int index) const;
+        bool isTable(int index) const;
+
+        ObjectView getObject(int index);
+        std::optional<ObjectView> tryGetObject(int index);
 
         void pushFunction(std::string_view lua, const char* name = "");
 

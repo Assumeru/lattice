@@ -2,6 +2,7 @@
 #include <object.hpp>
 #include <stack.hpp>
 #include <state.hpp>
+#include <table.hpp>
 
 #include <array>
 #include <iostream>
@@ -20,6 +21,7 @@ namespace
             state.loadLibraries(toLoad);
             state.withStack([](lat::Stack& stack) {
                 std::cout << "start\n";
+                std::cout << "string == nil " << static_cast<int>(stack["string"].get().getType()) << '\n';
                 constexpr std::string_view code = "return { a = 2, [2] = 'c', b = { c = 'd' } }";
                 stack.pushFunction(code);
                 lat::LuaApi api(*stack.get());

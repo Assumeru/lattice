@@ -1,8 +1,6 @@
 #ifndef LATTICE_OBJECT_H
 #define LATTICE_OBJECT_H
 
-#include "table.hpp"
-
 #include <cstddef>
 #include <optional>
 #include <string>
@@ -12,6 +10,7 @@
 namespace lat
 {
     class Stack;
+    class TableView;
     enum class LuaType : int;
 
     class ObjectView
@@ -44,6 +43,8 @@ namespace lat
         double asFloat() const;
         std::string_view asString() const;
         TableView asTable() const;
+
+        ObjectView on(Stack&);
 
         template <class T>
         bool is() const

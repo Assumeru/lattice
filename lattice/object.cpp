@@ -2,6 +2,7 @@
 
 #include "lua/api.hpp"
 #include "stack.hpp"
+#include "table.hpp"
 
 #include <stdexcept>
 
@@ -77,5 +78,17 @@ namespace lat
         if (!isTable())
             throw std::runtime_error("value is not a table");
         return TableView(mStack, mIndex);
+    }
+
+    ObjectView ObjectView::on(Stack& stack)
+    {
+        if (stack == mStack)
+            return *this;
+        mStack.ensure(1);
+        stack.ensure(1);
+        LuaApi api = mStack.api();
+        api.pushCopy(mIndex);
+        api.moveValuesTo(stack.api(), 1);
+        return ObjectView(stack, stack.getTop());
     }
 }

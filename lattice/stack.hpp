@@ -2,10 +2,11 @@
 #define LATTICE_STACK_H
 
 #include "functionref.hpp"
+#include "table.hpp"
 
 #include <cstdint>
-#include <string_view>
 #include <optional>
+#include <string_view>
 
 struct lua_State;
 
@@ -13,6 +14,7 @@ namespace lat
 {
     class LuaApi;
     class ObjectView;
+    class TableView;
 
     // Non-owning lua_State wrapper
     class Stack
@@ -35,6 +37,11 @@ namespace lat
 
     public:
         explicit Stack(lua_State*);
+
+        bool operator==(const Stack& other) const { return mState == other.mState; }
+
+        TableView globals();
+        IndexedTableView operator[](auto key) { return globals()[key]; }
 
         void ensure(std::uint16_t extra);
 

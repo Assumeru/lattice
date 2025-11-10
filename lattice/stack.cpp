@@ -91,6 +91,11 @@ namespace lat
             &function);
     }
 
+    TableView Stack::globals()
+    {
+        return TableView(*this, LUA_GLOBALSINDEX);
+    }
+
     void Stack::ensure(std::uint16_t extra)
     {
         if (!api().checkStack(extra))
@@ -104,7 +109,12 @@ namespace lat
 
     int Stack::makeAbsolute(int index) const
     {
-        if (index < 0)
+        if (index <= LUA_REGISTRYINDEX)
+        {
+            if (index < LUA_GLOBALSINDEX)
+                throw std::out_of_range("invalid index");
+        }
+        else if (index < 0)
             return getTop() + index + 1;
         return index;
     }
@@ -157,12 +167,9 @@ namespace lat
 
     std::optional<ObjectView> Stack::tryGetObject(int index)
     {
-        LuaApi lua = api();
-        if (lua.isNone(index))
+        if (api().isNone(index))
             return {};
-        if (index < 0)
-            index = lua.getStackSize() + index + 1;
-        return ObjectView(*this, index);
+        return ObjectView(*this, makeAbsolute(index));
     }
 
     void Stack::pushFunction(std::string_view script, const char* name)

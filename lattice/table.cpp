@@ -32,9 +32,8 @@ namespace lat
             }
         }
 
-        int walk(Stack& stack, LuaApi& api, int table, std::span<const TableIndex> path)
+        int walk(LuaApi& api, int table, std::span<const TableIndex> path)
         {
-            stack.ensure(3);
             for (std::size_t i = 0; i < path.size(); ++i)
             {
                 std::visit(
@@ -43,7 +42,7 @@ namespace lat
                         api.pushTableValue(table);
                         if (i > 0)
                             api.remove(table);
-                        table = stack.makeAbsolute(-1);
+                        table = api.getStackSize();
                     },
                     path[i]);
             }
@@ -51,31 +50,23 @@ namespace lat
         }
     }
 
-    void IndexedTableView::set(const ObjectView& value)
+    void IndexedTableView::set(ObjectView& value)
     {
-        assert(&mTable.mStack == &value.mStack);
+        int index = value.on(mTable.mStack).mIndex;
         LuaApi api = mTable.mStack.api();
-        int table = walk(mTable.mStack, api, mTable.mIndex, { mPath.begin(), mPath.end() - 1 });
+        mTable.mStack.ensure(3);
+        int table = walk(api, mTable.mIndex, { mPath.begin(), mPath.end() - 1 });
         std::visit([&](auto segment) { pushSegment(api, segment); }, mPath.back());
-        api.pushCopy(value.mIndex);
+        api.pushCopy(index);
         api.setTableEntry(table);
     }
 
     ObjectView IndexedTableView::get()
     {
         LuaApi api = mTable.mStack.api();
-        int index = walk(mTable.mStack, api, mTable.mIndex, mPath);
+        mTable.mStack.ensure(2);
+        int index = walk(api, mTable.mIndex, mPath);
         return ObjectView(mTable.mStack, index);
-    }
-
-    void IndexedTableView::operator=(const ObjectView& value)
-    {
-        return set(value);
-    }
-
-    IndexedTableView::operator ObjectView()
-    {
-        return get();
     }
 
     IndexedTableView IndexedTableView::append(IndexedTableView path, TableIndex key)
@@ -94,10 +85,10 @@ namespace lat
         return append(*this, index);
     }
 
-    IndexedTableView IndexedTableView::operator[](const ObjectView& key)
+    IndexedTableView IndexedTableView::operator[](ObjectView& key)
     {
-        assert(&mTable.mStack == &key.mStack);
-        return append(*this, key.mIndex);
+        int index = key.on(mTable.mStack).mIndex;
+        return append(*this, index);
     }
 
     IndexedTableView TableView::operator[](std::string_view key)
@@ -110,9 +101,9 @@ namespace lat
         return IndexedTableView::append(IndexedTableView(*this), index);
     }
 
-    IndexedTableView TableView::operator[](const ObjectView& key)
+    IndexedTableView TableView::operator[](ObjectView& key)
     {
-        assert(&mStack == &key.mStack);
-        return IndexedTableView::append(IndexedTableView(*this), key.mIndex);
+        int index = key.on(mStack).mIndex;
+        return IndexedTableView::append(IndexedTableView(*this), index);
     }
 }

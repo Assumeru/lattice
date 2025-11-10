@@ -20,13 +20,17 @@ namespace
             state.loadLibraries(toLoad);
             state.withStack([](lat::Stack& stack) {
                 std::cout << "start\n";
-                constexpr std::string_view code = "return { a = 2, [2] = 'c' }";
+                constexpr std::string_view code = "return { a = 2, [2] = 'c', b = { c = 'd' } }";
                 stack.pushFunction(code);
                 lat::LuaApi api(*stack.get());
                 api.call(0, 1);
-                auto object = stack.getObject(-1);
-                std::cout << "a = " << object["a"].as<int>() << '\n';
-                std::cout << "2 = " << object[object["a"]].as<std::string_view>() << '\n';
+                auto object = stack.getObject(-1).asTable();
+                lat::ObjectView a = object["a"];
+                std::cout << "a = " << a.as<int>() << '\n';
+                lat::ObjectView c = object[a];
+                std::cout << "c = " << c.as<std::string_view>() << '\n';
+                lat::ObjectView d = object["b"][c];
+                std::cout << "d = " << d.as<std::string_view>() << '\n';
             });
         }
         catch (const std::exception& e)

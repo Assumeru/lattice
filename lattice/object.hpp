@@ -1,6 +1,8 @@
 #ifndef LATTICE_OBJECT_H
 #define LATTICE_OBJECT_H
 
+#include "table.hpp"
+
 #include <cstddef>
 #include <optional>
 #include <string>
@@ -20,6 +22,9 @@ namespace lat
         template <class T>
         static constexpr bool isOptional = std::is_same_v<T, std::optional<typename T::value_type>>;
 
+        friend class IndexedTableView;
+        friend class TableView;
+
     public:
         ObjectView(Stack& stack, int index)
             : mStack(stack)
@@ -38,6 +43,7 @@ namespace lat
         std::ptrdiff_t asInt() const;
         double asFloat() const;
         std::string_view asString() const;
+        TableView asTable() const;
 
         template <class T>
         bool is() const
@@ -57,6 +63,10 @@ namespace lat
             else if constexpr (std::is_same_v<T, std::string>)
             {
                 return isString();
+            }
+            else if constexpr (std::is_same_v<T, TableView>)
+            {
+                return isTable();
             }
             else
             {
@@ -87,6 +97,10 @@ namespace lat
             {
                 return std::string(asString());
             }
+            else if constexpr (std::is_same_v<T, TableView>)
+            {
+                return asTable();
+            }
             else if constexpr (isOptional<T>)
             {
                 if (!is<typename T::value_type>())
@@ -98,10 +112,6 @@ namespace lat
                 static_assert(false);
             }
         }
-
-        ObjectView operator[](std::string_view key);
-        ObjectView operator[](std::ptrdiff_t index);
-        ObjectView operator[](const ObjectView& key);
     };
 }
 

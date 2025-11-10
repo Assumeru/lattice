@@ -25,6 +25,7 @@ namespace lat
         friend class State;
         friend struct MainStack;
         friend class ObjectView;
+        friend class IndexedTableView;
 
         LuaApi api();
         const LuaApi api() const;
@@ -39,6 +40,7 @@ namespace lat
 
         void collectGarbage();
 
+        int makeAbsolute(int index) const;
         int getTop() const;
 
         void pop(std::uint16_t amount = 1);

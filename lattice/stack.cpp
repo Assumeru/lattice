@@ -102,6 +102,13 @@ namespace lat
         api().runGarbageCollector();
     }
 
+    int Stack::makeAbsolute(int index) const
+    {
+        if (index < 0)
+            return getTop() + index + 1;
+        return index;
+    }
+
     int Stack::getTop() const
     {
         return api().getStackSize();

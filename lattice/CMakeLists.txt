@@ -13,6 +13,8 @@ target_sources(LibLattice
     PUBLIC
         FILE_SET HEADERS
         FILES
+            basicstack.hpp
+            convert.hpp
             object.hpp
             stack.hpp
             state.hpp

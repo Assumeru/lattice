@@ -1,7 +1,7 @@
 #include "object.hpp"
 
+#include "basicstack.hpp"
 #include "lua/api.hpp"
-#include "stack.hpp"
 #include "table.hpp"
 
 #include <stdexcept>
@@ -80,15 +80,16 @@ namespace lat
         return TableView(mStack, mIndex);
     }
 
-    ObjectView ObjectView::on(Stack& stack)
+    ObjectView ObjectView::pushTo(BasicStack& stack)
     {
-        if (stack == mStack)
-            return *this;
-        mStack.ensure(1);
-        stack.ensure(1);
+        const bool sameStack = stack == mStack;
         LuaApi api = mStack.api();
+        mStack.ensure(1);
+        if (!sameStack)
+            stack.ensure(1);
         api.pushCopy(mIndex);
-        api.moveValuesTo(stack.api(), 1);
+        if (!sameStack)
+            api.moveValuesTo(stack.api(), 1);
         return ObjectView(stack, stack.getTop());
     }
 }

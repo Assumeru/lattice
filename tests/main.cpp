@@ -21,18 +21,26 @@ namespace
             state.loadLibraries(toLoad);
             state.withStack([](lat::Stack& stack) {
                 std::cout << "start\n";
-                std::cout << "string == nil " << static_cast<int>(stack["string"].get().getType()) << '\n';
+                // std::cout << "string == nil " << static_cast<int>(stack["string"].get().getType()) << '\n';
                 constexpr std::string_view code = "return { a = 2, [2] = 'c', b = { c = 'd' } }";
                 stack.pushFunction(code);
                 lat::LuaApi api(*stack.get());
                 api.call(0, 1);
                 auto object = stack.getObject(-1).asTable();
                 lat::ObjectView a = object["a"];
+                // lat::ObjectView a = object.get("a");
                 std::cout << "a = " << a.as<int>() << '\n';
                 lat::ObjectView c = object[a];
+                // lat::ObjectView c = object.get(a);
                 std::cout << "c = " << c.as<std::string_view>() << '\n';
-                lat::ObjectView d = object["b"][c];
-                std::cout << "d = " << d.as<std::string_view>() << '\n';
+                lat::ObjectView bc = object["b"][c];
+                // lat::ObjectView bc = object.get("b", "c");
+                std::cout << "b.c = " << bc.as<std::string_view>() << '\n';
+                // object.set(1, "b", "d");
+                object["b"]["d"] = 1;
+                // lat::ObjectView bd = object.get("b", "d");
+                lat::ObjectView bd = object["b"]["d"];
+                std::cout << "b.d = " << bd.as<int>() << '\n';
             });
         }
         catch (const std::exception& e)

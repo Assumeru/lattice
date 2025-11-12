@@ -25,28 +25,46 @@ namespace
         }
         throw std::runtime_error(fallback);
     }
+
+    void ensure(auto&& api, std::uint16_t extra)
+    {
+        if (!api.checkStack(extra))
+            throw std::runtime_error("exceeded maximum stack size");
+    }
+
+    int push(lat::LuaApi api, auto method, auto... args)
+    {
+        ensure(api, 1);
+        (api.*method)(args...);
+        return api.getStackSize();
+    }
 }
 
 namespace lat
 {
-    Stack::Stack(lua_State* state)
+    BasicStack::BasicStack(lua_State* state)
         : mState(state)
     {
         if (state == nullptr)
             throw std::bad_alloc();
     }
 
-    LuaApi Stack::api()
+    Stack::Stack(lua_State* state)
+        : BasicStack(state)
+    {
+    }
+
+    LuaApi BasicStack::api()
     {
         return LuaApi(*mState);
     }
 
-    const LuaApi Stack::api() const
+    const LuaApi BasicStack::api() const
     {
         return LuaApi(*mState);
     }
 
-    void Stack::protectedCall(lua_CFunction function, void* userData)
+    void BasicStack::protectedCall(lua_CFunction function, void* userData)
     {
         LuaApi lua = api();
         LuaStatus status = lua.protectedCall(function, userData);
@@ -91,23 +109,22 @@ namespace lat
             &function);
     }
 
-    TableView Stack::globals()
+    TableView BasicStack::globals()
     {
         return TableView(*this, LUA_GLOBALSINDEX);
     }
 
-    void Stack::ensure(std::uint16_t extra)
+    void BasicStack::ensure(std::uint16_t extra)
     {
-        if (!api().checkStack(extra))
-            throw std::runtime_error("exceeded maximum stack size");
+        ::ensure(api(), extra);
     }
 
-    void Stack::collectGarbage()
+    void BasicStack::collectGarbage()
     {
         api().runGarbageCollector();
     }
 
-    int Stack::makeAbsolute(int index) const
+    int BasicStack::makeAbsolute(int index) const
     {
         if (index <= LUA_REGISTRYINDEX)
         {
@@ -119,12 +136,12 @@ namespace lat
         return index;
     }
 
-    int Stack::getTop() const
+    int BasicStack::getTop() const
     {
         return api().getStackSize();
     }
 
-    void Stack::pop(std::uint16_t amount)
+    void BasicStack::pop(std::uint16_t amount)
     {
         if (amount > 0)
         {
@@ -135,49 +152,74 @@ namespace lat
         }
     }
 
-    bool Stack::isBoolean(int index) const
+    bool BasicStack::isBoolean(int index) const
     {
         return api().isBoolean(index);
     }
 
-    bool Stack::isNil(int index) const
+    bool BasicStack::isNil(int index) const
     {
         return api().isNil(index);
     }
 
-    bool Stack::isNumber(int index) const
+    bool BasicStack::isNumber(int index) const
     {
         return api().isNumber(index);
     }
 
-    bool Stack::isString(int index) const
+    bool BasicStack::isString(int index) const
     {
         return api().isString(index);
     }
 
-    bool Stack::isTable(int index) const
+    bool BasicStack::isTable(int index) const
     {
         return api().isTable(index);
     }
 
-    ObjectView Stack::getObject(int index)
+    ObjectView BasicStack::getObject(int index)
     {
         return tryGetObject(index).value();
     }
 
-    std::optional<ObjectView> Stack::tryGetObject(int index)
+    std::optional<ObjectView> BasicStack::tryGetObject(int index)
     {
         if (api().isNone(index))
             return {};
         return ObjectView(*this, makeAbsolute(index));
     }
 
-    void Stack::pushFunction(std::string_view script, const char* name)
+    ObjectView BasicStack::pushNil()
+    {
+        return ObjectView(*this, push(api(), &LuaApi::pushNil));
+    }
+
+    ObjectView BasicStack::pushBoolean(bool value)
+    {
+        return ObjectView(*this, push(api(), &LuaApi::pushBoolean, value));
+    }
+
+    ObjectView BasicStack::pushInteger(std::ptrdiff_t value)
+    {
+        return ObjectView(*this, push(api(), &LuaApi::pushInteger, value));
+    }
+
+    ObjectView BasicStack::pushNumber(double value)
+    {
+        return ObjectView(*this, push(api(), &LuaApi::pushNumber, value));
+    }
+
+    ObjectView BasicStack::pushString(std::string_view value)
+    {
+        return ObjectView(*this, push(api(), &LuaApi::pushString, value));
+    }
+
+    void BasicStack::pushFunction(std::string_view script, const char* name)
     {
         if (script.starts_with(LUA_SIGNATURE[0]))
             throw std::invalid_argument("argument cannot be bytecode");
-        ensure(1);
         LuaApi lua = api();
+        ::ensure(lua, 1);
         LuaStatus status = lua.loadFunction(script, name);
         switch (status)
         {

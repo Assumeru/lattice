@@ -9,23 +9,22 @@
 
 namespace lat
 {
-    class Stack;
+    class BasicStack;
     class TableView;
     enum class LuaType : int;
 
     class ObjectView
     {
-        Stack& mStack;
+        BasicStack& mStack;
         int mIndex;
 
         template <class T>
         static constexpr bool isOptional = std::is_same_v<T, std::optional<typename T::value_type>>;
 
-        friend class IndexedTableView;
         friend class TableView;
 
     public:
-        ObjectView(Stack& stack, int index)
+        ObjectView(BasicStack& stack, int index)
             : mStack(stack)
             , mIndex(index)
         {
@@ -44,7 +43,7 @@ namespace lat
         std::string_view asString() const;
         TableView asTable() const;
 
-        ObjectView on(Stack&);
+        ObjectView pushTo(BasicStack&);
 
         template <class T>
         bool is() const

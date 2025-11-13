@@ -61,6 +61,7 @@ namespace lat
         ObjectView pushInteger(std::ptrdiff_t);
         ObjectView pushNumber(double);
         ObjectView pushString(std::string_view);
+        TableView pushTable(int objectSize = 0, int arraySize = 0);
         void pushFunction(std::string_view lua, const char* name = "");
     };
 }

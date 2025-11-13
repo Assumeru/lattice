@@ -214,6 +214,11 @@ namespace lat
         return ObjectView(*this, push(api(), &LuaApi::pushString, value));
     }
 
+    TableView BasicStack::pushTable(int objectSize, int arraySize)
+    {
+        return TableView(*this, push(api(), &LuaApi::createTable, arraySize, objectSize));
+    }
+
     void BasicStack::pushFunction(std::string_view script, const char* name)
     {
         if (script.starts_with(LUA_SIGNATURE[0]))

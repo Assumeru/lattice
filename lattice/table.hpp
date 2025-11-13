@@ -5,6 +5,7 @@
 #include "object.hpp"
 
 #include <cstddef>
+#include <stdexcept>
 #include <utility>
 
 namespace lat
@@ -19,6 +20,15 @@ namespace lat
 
         int pushTableValue(int table, bool pop);
         void setTableValue(int table);
+        void checkSingleValue(int prev);
+
+        template <class T>
+        void pushSingleObject(T&& object)
+        {
+            const int prev = mStack.getTop();
+            pushToStack(mStack, std::forward<T>(object));
+            checkSingleValue(prev);
+        }
 
         template <class... Path>
         ObjectView getImpl(Path&&... path)
@@ -27,7 +37,7 @@ namespace lat
             int table = mIndex;
             (
                 [&] {
-                    pushToStack(mStack, std::forward<Path>(path));
+                    pushSingleObject(std::forward<Path>(path));
                     table = pushTableValue(table, i > 0);
                     ++i;
                 }(),
@@ -43,10 +53,10 @@ namespace lat
             int table = mIndex;
             (
                 [&] {
-                    pushToStack(mStack, std::forward<Path>(path));
+                    pushSingleObject(std::forward<Path>(path));
                     if (i == count - 1)
                     {
-                        pushToStack(mStack, std::forward<Value>(value));
+                        pushSingleObject(std::forward<Value>(value));
                         setTableValue(table);
                     }
                     else
@@ -57,6 +67,9 @@ namespace lat
                 }(),
                 ...);
         }
+
+        template <class>
+        friend class IndexedTableView;
 
     public:
         TableView(BasicStack& stack, int index)
@@ -81,6 +94,8 @@ namespace lat
 
         template <class Key>
         auto operator[](Key&& key);
+
+        std::size_t size() const;
     };
 
     template <class Path>
@@ -95,6 +110,8 @@ namespace lat
         {
         }
 
+        void pop() { mTable.mStack.pop(); }
+
         friend class TableView;
         template <class>
         friend class IndexedTableView;
@@ -102,6 +119,8 @@ namespace lat
         friend void pushValue(BasicStack&, T&&);
 
     public:
+        using type = Path;
+
         template <class Key>
         auto operator[](Key&& key)
         {
@@ -137,12 +156,12 @@ namespace lat
         return IndexedTableView(*this, std::make_tuple<Key>(std::forward<Key>(key)));
     }
 
-    template <class T, class Path,
-        typename = std::enable_if_t<std::is_same_v<std::remove_reference_t<T>, IndexedTableView<Path>>>>
+    template <class T, class U = std::remove_reference_t<T>,
+        typename = std::enable_if_t<std::is_same_v<U, IndexedTableView<typename U::type>>>>
     void pushValue(BasicStack& stack, T&& value)
     {
         value.get().pushTo(stack);
-        value.mTable.mStack.pop();
+        value.pop();
     }
 }
 

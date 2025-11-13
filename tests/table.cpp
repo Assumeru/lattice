@@ -1,0 +1,44 @@
+#include <state.hpp>
+#include <stack.hpp>
+
+#include <gtest/gtest.h>
+
+namespace
+{
+    using namespace lat;
+
+    struct TableTest : public testing::Test
+    {
+        State mState;
+    };
+
+    TEST_F(TableTest, can_manipulate_table)
+    {
+        mState.withStack([](Stack& stack) {
+            int top = stack.getTop();
+            TableView table = stack.pushTable();
+            ++top;
+            EXPECT_EQ(top, stack.getTop());
+            EXPECT_EQ(0, table.size());
+            table["a"] = 1;
+            table[1] = "b";
+            EXPECT_EQ(1, table.size());
+            EXPECT_EQ(top, stack.getTop());
+            ObjectView entry = table[table["a"]];
+            ++top;
+            EXPECT_EQ(top, stack.getTop());
+            EXPECT_EQ(entry.asString(), "b");
+        });
+    }
+
+    TEST_F(TableTest, can_nest_tables)
+    {
+        mState.withStack([](Stack& stack) {
+            TableView t1 = stack.pushTable();
+            TableView t2 = stack.pushTable();
+            t1["a"] = t2;
+            t2["b"] = 1;
+            EXPECT_EQ(1, t1["a"]["b"].get().asInt());
+        });
+    }
+}

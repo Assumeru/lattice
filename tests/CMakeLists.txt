@@ -18,4 +18,5 @@ target_sources(LatticeTests
         debug.cpp
         main.cpp
         memory.cpp
+        table.cpp
 )

@@ -1,8 +1,8 @@
 #ifndef LATTICE_STACK_H
 #define LATTICE_STACK_H
 
-#include "table.hpp"
 #include "basicstack.hpp"
+#include "table.hpp"
 
 namespace lat
 {
@@ -18,6 +18,8 @@ namespace lat
         explicit Stack(lua_State*);
 
         auto operator[](auto key) { return globals()[key]; }
+
+        TableView pushArray(int size) { return pushTable(0, size); }
 
         // TODO remove
         lua_State* get() { return mState; }

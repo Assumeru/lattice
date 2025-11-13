@@ -30,7 +30,8 @@ namespace lat
         stack.pushString(value);
     }
 
-    template <class Value, class T = std::remove_cv_t<Value>>
+    template <class Value, bool light = false, class T = std::remove_cvref_t<Value>,
+        class V = std::remove_volatile_t<Value>>
     void pushToStack(BasicStack& stack, Value&& value)
     {
         if constexpr (std::is_same_v<T, bool>)
@@ -45,19 +46,19 @@ namespace lat
         {
             stack.pushNumber(static_cast<double>(value));
         }
-        else if constexpr (std::is_same_v<std::remove_reference_t<T>, std::string_view>)
+        else if constexpr (std::is_same_v<T, std::string_view>)
         {
             stack.pushString(value);
         }
-        else if constexpr (detail::PushSpecialization<std::remove_volatile_t<Value>>)
+        else if constexpr (detail::PushSpecialization<V>)
         {
-            pushValue(stack, std::forward<Value>(value));
+            pushValue(stack, std::forward<V>(value));
         }
         else if constexpr (detail::Optional<T>)
         {
             if (value)
             {
-                using OptT = typename Value::value_type;
+                using OptT = typename V::value_type;
                 pushToStack<OptT>(stack, std::forward<OptT>(*value));
             }
             else
@@ -65,7 +66,8 @@ namespace lat
         }
         else if constexpr (detail::isReferenceWrapper<T>)
         {
-            pushToStack(value.get());
+            using RefT = typename V::type;
+            pushToStack<RefT&, true>(value.get());
         }
         else if constexpr (std::is_pointer_v<T>)
         {
@@ -73,23 +75,23 @@ namespace lat
                 stack.pushNil();
             else
             {
-                using RefT = std::add_lvalue_reference_t<std::remove_pointer_t<Value>>;
-                pushToStack<RefT>(std::forward<RefT>(*value));
+                using RefT = std::add_lvalue_reference_t<std::remove_pointer_t<V>>;
+                pushToStack<RefT, true>(std::forward<RefT>(*value));
             }
         }
         else if constexpr (std::is_same_v<T, ObjectView>)
         {
-            if constexpr (std::is_const_v<Value>)
+            if constexpr (std::is_const_v<V>)
                 static_assert(false, "cannot push const object");
             value.pushTo(stack);
         }
         else if constexpr (std::is_convertible_v<T, ObjectView>)
         {
-            if constexpr (std::is_const_v<Value>)
+            if constexpr (std::is_const_v<V>)
                 static_assert(false, "cannot push const object");
             ObjectView(value).pushTo(stack);
         }
-        else if constexpr (std::is_lvalue_reference_v<T>)
+        else if constexpr (light)
         {
             // TODO push light user data
             static_assert(false, "light user data not implemented");

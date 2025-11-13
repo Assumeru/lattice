@@ -117,6 +117,12 @@ namespace lat
         std::size_t size() const;
     };
 
+    namespace detail
+    {
+        template <class T, class U = std::remove_reference_t<T>>
+        concept IndexedTable = std::is_same_v<U, IndexedTableView<typename U::type>>;
+    }
+
     template <class Path>
     class IndexedTableView
     {
@@ -134,7 +140,7 @@ namespace lat
         friend class TableView;
         template <class>
         friend class IndexedTableView;
-        template <class T, class, class>
+        template <detail::IndexedTable T>
         friend void pushValue(BasicStack&, T&&);
 
     public:
@@ -175,8 +181,7 @@ namespace lat
         return IndexedTableView(*this, std::make_tuple<Key>(std::forward<Key>(key)));
     }
 
-    template <class T, class U = std::remove_reference_t<T>,
-        typename = std::enable_if_t<std::is_same_v<U, IndexedTableView<typename U::type>>>>
+    template <detail::IndexedTable T>
     void pushValue(BasicStack& stack, T&& value)
     {
         value.get().pushTo(stack);

@@ -1,5 +1,5 @@
-#include <state.hpp>
 #include <stack.hpp>
+#include <state.hpp>
 
 #include <gtest/gtest.h>
 
@@ -48,6 +48,28 @@ namespace
             TableView table = stack.pushTable();
             int top = stack.getTop();
             EXPECT_ANY_THROW(ObjectView object = table["a"]["b"]);
+            EXPECT_EQ(top, stack.getTop());
+        });
+    }
+
+    struct DoublePush
+    {
+    };
+
+    void pushValue(BasicStack& stack, DoublePush)
+    {
+        stack.pushNil();
+        stack.pushNil();
+    }
+
+    TEST_F(TableTest, cannot_use_types_that_push_multiple_values)
+    {
+        mState.withStack([](Stack& stack) {
+            TableView table = stack.pushTable();
+            int top = stack.getTop();
+            EXPECT_ANY_THROW(table["a"] = DoublePush());
+            EXPECT_EQ(top, stack.getTop());
+            EXPECT_ANY_THROW(table[DoublePush()] = 1);
             EXPECT_EQ(top, stack.getTop());
         });
     }

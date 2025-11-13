@@ -22,12 +22,36 @@ namespace lat
         template <class T>
         concept PushSpecialization
             = requires(BasicStack& stack, T&& value) { pushValue(stack, std::forward<T>(value)); };
+
+        template <class T>
+        concept StringViewConstructible = std::is_constructible_v<std::string_view, T>;
+
+        template <class T>
+        concept Enum = std::is_enum_v<T>;
+
+        struct Nil
+        {
+        };
     }
 
-    template <class T, typename = std::enable_if_t<std::is_constructible_v<std::string_view, T>>>
+    constexpr inline detail::Nil nil{};
+
+    inline void pushValue(BasicStack& stack, detail::Nil)
+    {
+        stack.pushNil();
+    }
+
+    template <detail::StringViewConstructible T>
     inline void pushValue(BasicStack& stack, T&& value)
     {
         stack.pushString(value);
+    }
+
+    template <detail::Enum T>
+    inline void pushValue(BasicStack& stack, T&& value)
+    {
+        using EType = std::underlying_type_t<T>;
+        stack.pushInteger(static_cast<EType>(value));
     }
 
     template <class Value, bool light = false, class T = std::remove_cvref_t<Value>,

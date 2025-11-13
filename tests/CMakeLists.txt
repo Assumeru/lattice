@@ -15,6 +15,7 @@ target_link_libraries(LatticeTests LibLattice GTest::gtest)
 
 target_sources(LatticeTests
     PRIVATE
+        conversion.cpp
         debug.cpp
         main.cpp
         memory.cpp

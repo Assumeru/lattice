@@ -2,6 +2,7 @@
 
 #include <lua.hpp>
 
+#include <algorithm>
 #include <new>
 #include <stdexcept>
 
@@ -216,7 +217,7 @@ namespace lat
 
     TableView BasicStack::pushTable(int objectSize, int arraySize)
     {
-        return TableView(*this, push(api(), &LuaApi::createTable, arraySize, objectSize));
+        return TableView(*this, push(api(), &LuaApi::createTable, std::max(arraySize, 0), std::max(objectSize, 0)));
     }
 
     void BasicStack::pushFunction(std::string_view script, const char* name)

@@ -41,4 +41,14 @@ namespace
             EXPECT_EQ(1, t1["a"]["b"].get().asInt());
         });
     }
+
+    TEST_F(TableTest, indexing_into_a_non_table_throws)
+    {
+        mState.withStack([](Stack& stack) {
+            TableView table = stack.pushTable();
+            int top = stack.getTop();
+            EXPECT_ANY_THROW(ObjectView object = table["a"]["b"]);
+            EXPECT_EQ(top, stack.getTop());
+        });
+    }
 }

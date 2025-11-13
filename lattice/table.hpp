@@ -21,6 +21,7 @@ namespace lat
         int pushTableValue(int table, bool pop);
         void setTableValue(int table);
         void checkSingleValue(int prev);
+        void cleanUp(int prev);
 
         template <class T>
         void pushSingleObject(T&& object)
@@ -33,39 +34,57 @@ namespace lat
         template <class... Path>
         ObjectView getImpl(Path&&... path)
         {
-            std::size_t i = 0;
-            int table = mIndex;
-            (
-                [&] {
-                    pushSingleObject(std::forward<Path>(path));
-                    table = pushTableValue(table, i > 0);
-                    ++i;
-                }(),
-                ...);
-            return ObjectView(mStack, table);
+            const int top = mStack.getTop();
+            try
+            {
+                std::size_t i = 0;
+                int table = mIndex;
+                (
+                    [&] {
+                        pushSingleObject(std::forward<Path>(path));
+                        table = pushTableValue(table, i > 0);
+                        ++i;
+                    }(),
+                    ...);
+                return ObjectView(mStack, table);
+            }
+            catch (...)
+            {
+                cleanUp(top);
+                throw;
+            }
         }
 
         template <class Value, class... Path>
         void setImpl(Value&& value, Path&&... path)
         {
             constexpr std::size_t count = sizeof...(path);
-            std::size_t i = 0;
-            int table = mIndex;
-            (
-                [&] {
-                    pushSingleObject(std::forward<Path>(path));
-                    if (i == count - 1)
-                    {
-                        pushSingleObject(std::forward<Value>(value));
-                        setTableValue(table);
-                    }
-                    else
-                    {
-                        table = pushTableValue(table, i > 0);
-                    }
-                    ++i;
-                }(),
-                ...);
+            const int top = mStack.getTop();
+            try
+            {
+                std::size_t i = 0;
+                int table = mIndex;
+                (
+                    [&] {
+                        pushSingleObject(std::forward<Path>(path));
+                        if (i == count - 1)
+                        {
+                            pushSingleObject(std::forward<Value>(value));
+                            setTableValue(table);
+                        }
+                        else
+                        {
+                            table = pushTableValue(table, i > 0);
+                        }
+                        ++i;
+                    }(),
+                    ...);
+            }
+            catch (...)
+            {
+                cleanUp(top);
+                throw;
+            }
         }
 
         template <class>

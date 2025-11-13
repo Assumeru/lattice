@@ -60,4 +60,10 @@ namespace
     {
         EXPECT_ANY_THROW(mState.withStack([&](Stack& stack) { stack.ensure(LUAI_MAXCSTACK + 1); }));
     }
+
+    TEST(NoMemoryTest, state_constructor_throws)
+    {
+        AllocatorData data{ .mBlock = true };
+        EXPECT_THROW(State(allocate, &data), std::bad_alloc);
+    }
 }

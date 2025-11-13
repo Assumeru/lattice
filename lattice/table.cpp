@@ -10,6 +10,8 @@ namespace lat
     {
         mStack.ensure(1);
         LuaApi api = mStack.api();
+        if (!api.isTable(table))
+            throw std::runtime_error("attempted to index non-table value");
         api.pushTableValue(table);
         if (pop)
             api.remove(table);
@@ -30,6 +32,13 @@ namespace lat
                 mStack.pop(static_cast<std::uint16_t>(diff));
             throw std::runtime_error(std::format("expected a single value to be pushed got {}", diff));
         }
+    }
+
+    void TableView::cleanUp(int prev)
+    {
+        const int diff = mStack.getTop() - prev;
+        if (diff > 0)
+            mStack.pop(static_cast<std::uint16_t>(diff));
     }
 
     std::size_t TableView::size() const

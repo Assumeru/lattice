@@ -196,6 +196,11 @@ namespace lat
         return stack.getObject(pos++).asTable();
     }
 
+    inline bool isValue(const BasicStack& stack, int& pos, detail::Type<TableView>)
+    {
+        return stack.isTable(pos++);
+    }
+
     namespace detail
     {
         template <>

@@ -35,7 +35,7 @@ namespace
                 std::cout << "a = " << a.as<int>() << '\n';
                 lat::ObjectView c = object[a];
                 // lat::ObjectView c = object.get(a);
-                std::cout << "c = " << c.as<std::string_view>() << '\n';
+                std::cout << "c = " << static_cast<int>( c.getType()) << c.as<std::string_view>() << '\n';
                 lat::ObjectView bc = object["b"][c];
                 // lat::ObjectView bc = object.get("b", "c");
                 std::cout << "b.c = " << bc.as<std::string_view>() << '\n';

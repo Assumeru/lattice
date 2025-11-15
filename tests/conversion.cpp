@@ -56,9 +56,8 @@ namespace
     TEST_F(ConversionTest, can_pull_bool)
     {
         mState.withStack([](Stack& stack) {
-            stack.pushBoolean(true);
-            int pos = stack.getTop();
-            bool value = pullFromStack<bool>(stack, pos);
+            ObjectView pushed = stack.pushBoolean(true);
+            bool value = pushed.as<bool>();
             EXPECT_EQ(value, true);
         });
     }

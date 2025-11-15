@@ -51,8 +51,8 @@ namespace lat
         void pop(std::uint16_t amount = 1);
         void remove(int index);
 
-        bool isBoolean(int index) const;
         bool isNil(int index) const;
+        bool isBoolean(int index) const;
         bool isNumber(int index) const;
         bool isString(int index) const;
         bool isTable(int index) const;

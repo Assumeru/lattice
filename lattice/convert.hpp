@@ -18,6 +18,9 @@ namespace lat
         concept Integer = std::is_integral_v<T> && !std::same_as<T, bool>;
 
         template <class T>
+        concept Number = Integer<T> || std::is_floating_point_v<T>;
+
+        template <class T>
         concept Enum = std::is_enum_v<T>;
 
         template <class T>
@@ -47,8 +50,8 @@ namespace lat
         };
 
         template <class T>
-        concept ViewPullSpecialized = requires(ObjectView view, Type<T> type) {
-            { pullValue(view, type) } -> std::constructible_from<T>;
+        concept GetFromViewSpecialized = requires(ObjectView view, Type<T> type) {
+            { getValue(view, type) } -> std::constructible_from<T>;
         };
 
         template <class T>
@@ -56,22 +59,21 @@ namespace lat
             { pullValue(stack, pos, type) } -> std::constructible_from<T>;
         };
 
-        template<class T>
-        constexpr inline bool pullsOneValue = ViewPullSpecialized<T>;
-        template<>
+        template <class T>
+        constexpr inline bool pullsOneValue = GetFromViewSpecialized<T>;
+        template <>
         constexpr inline bool pullsOneValue<ObjectView> = true;
+
+        template <class T>
+        concept IsSpecialized = requires(const BasicStack& stack, int& pos, Type<T> type) {
+            { isValue(stack, pos, type) } -> std::same_as<bool>;
+        };
     }
 
     inline void pushValue(BasicStack& stack, detail::Nil)
     {
         stack.pushNil();
     }
-
-    // template <detail::Integer T>
-    // inline void pushValue(BasicStack& stack, T&& value)
-    // {
-    //     stack.pushInteger(static_cast<std::ptrdiff_t>(value)));
-    // }
 
     template <detail::StringViewConstructible T>
     inline void pushValue(BasicStack& stack, T&& value)
@@ -88,7 +90,7 @@ namespace lat
 
     template <class Value, bool light = false, class T = std::remove_cvref_t<Value>,
         class V = std::remove_volatile_t<Value>>
-    void pushToStack(BasicStack& stack, Value&& value)
+    inline void pushToStack(BasicStack& stack, Value&& value)
     {
         if constexpr (std::is_same_v<T, bool>)
         {
@@ -159,40 +161,88 @@ namespace lat
         }
     }
 
-    inline detail::Nil pullValue(ObjectView view, detail::Type<detail::Nil>)
+    inline bool isValue(const BasicStack& stack, int& pos, detail::Type<detail::Nil>)
+    {
+        return stack.isNil(pos++);
+    }
+
+    inline bool isValue(const BasicStack& stack, int& pos, detail::Type<bool>)
+    {
+        return stack.isBoolean(pos++);
+    }
+
+    template <detail::Number T>
+    inline bool isValue(const BasicStack& stack, int& pos, detail::Type<T>)
+    {
+        return stack.isNumber(pos++);
+    }
+
+    template <std::constructible_from<std::string_view> T>
+    inline bool isValue(const BasicStack& stack, int& pos, detail::Type<T>)
+    {
+        return stack.isString(pos++);
+    }
+
+    inline bool isValue(const BasicStack& stack, int& pos, detail::Type<ObjectView>)
+    {
+        return stack.getTop() >= pos++;
+    }
+
+    template <detail::Optional T>
+    inline bool isValue(const BasicStack& stack, int& pos, detail::Type<T>)
+    {
+        if (stack.isNil(pos))
+        {
+            ++pos;
+            return true;
+        }
+        using OptT = typename T::value_type;
+        return stackValueIs<OptT>(stack, pos);
+    }
+
+    template <class Value, class T = std::remove_cvref_t<Value>>
+    inline bool stackValueIs(const BasicStack& stack, int& pos)
+    {
+        if constexpr (std::is_reference_v<Value>)
+        {
+            static_assert(false, "a stack value is not a reference");
+        }
+        else if constexpr (detail::IsSpecialized<T>)
+        {
+            return isValue(stack, pos, detail::Type<T>{});
+        }
+        else
+        {
+            static_assert(false, "TODO");
+        }
+    }
+
+    inline detail::Nil getValue(ObjectView view, detail::Type<detail::Nil>)
     {
         return view.asNil();
     }
 
-    inline bool pullValue(ObjectView view, detail::Type<bool>)
+    inline bool getValue(ObjectView view, detail::Type<bool>)
     {
         return view.asBool();
     }
 
     template <detail::Integer T>
-    inline T pullValue(ObjectView view, detail::Type<T>)
+    inline T getValue(ObjectView view, detail::Type<T>)
     {
         return static_cast<T>(view.asInt());
     }
 
     template <std::floating_point T>
-    inline T pullValue(ObjectView view, detail::Type<T>)
+    inline T getValue(ObjectView view, detail::Type<T>)
     {
         return static_cast<T>(view.asFloat());
     }
 
     template <std::constructible_from<std::string_view> T>
-    inline T pullValue(ObjectView view, detail::Type<T>)
+    inline T getValue(ObjectView view, detail::Type<T>)
     {
         return view.asString();
-    }
-
-    template <detail::ViewPullSpecialized T>
-    inline T pullValue(BasicStack& stack, int& pos, detail::Type<T> t)
-    {
-        T value = pullValue(stack.getObject(pos), t);
-        stack.remove(pos);
-        return value;
     }
 
     inline ObjectView pullValue(BasicStack& stack, int& pos, detail::Type<ObjectView>)
@@ -200,12 +250,83 @@ namespace lat
         return stack.getObject(pos++);
     }
 
-    template <class Value, class T = std::remove_cvref_t<Value>>
-    Value pullFromStack(BasicStack& stack, int& pos)
+    template <detail::Optional T>
+    inline T pullValue(BasicStack& stack, int& pos, detail::Type<T>)
     {
-        if constexpr (detail::PullSpecialized<T>)
+        if (stack.isNil(pos))
+        {
+            stack.remove(pos);
+            return {};
+        }
+        int p = pos;
+        using OptT = typename T::value_type;
+        if (!stackValueIs<OptT>(stack, p))
+            return {};
+        return pullFromStack<OptT>(stack, pos);
+    }
+
+    template <class Value, class T = std::remove_cvref_t<Value>>
+    inline Value pullFromStack(BasicStack& stack, int& pos)
+    {
+        if constexpr (std::is_reference_v<Value>)
+        {
+            static_assert(false, "a stack value is not a reference");
+        }
+        else if constexpr (detail::PullSpecialized<T>)
         {
             return pullValue(stack, pos, detail::Type<T>{});
+        }
+        else if constexpr (detail::GetFromViewSpecialized<T>)
+        {
+            T value = getValue(stack.getObject(pos), detail::Type<T>{});
+            stack.remove(pos);
+            return value;
+        }
+        else
+        {
+            static_assert(false, "TODO");
+        }
+    }
+
+    template <class T>
+    bool ObjectView::is() const
+    {
+        int pos = mIndex;
+        return stackValueIs<T>(mStack, pos) && mIndex - pos <= 1;
+    }
+
+    template <class Value>
+    Value ObjectView::as() const
+    {
+        using T = std::remove_cvref_t<Value>;
+        if constexpr (std::is_reference_v<Value>)
+        {
+            static_assert(false, "a stack value is not a reference");
+        }
+        else if constexpr (std::is_same_v<T, ObjectView>)
+        {
+            return *this;
+        }
+        else if constexpr (std::is_same_v<T, TableView>)
+        {
+            return asTable();
+        }
+        else if constexpr (std::is_same_v<T, FunctionView>)
+        {
+            return asFunction();
+        }
+        else if constexpr (detail::Optional<T>)
+        {
+            if (isNil())
+                return {};
+            using OptT = typename T::value_type;
+            if (!is<OptT>())
+                return {};
+            return getValue(*this, detail::Type<OptT>{});
+        }
+        else if constexpr (detail::GetFromViewSpecialized<T>)
+        {
+            return getValue(*this, detail::Type<T>{});
         }
         else
         {

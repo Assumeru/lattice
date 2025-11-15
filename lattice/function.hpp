@@ -100,6 +100,11 @@ namespace lat
         return stack.getObject(pos++).asFunction();
     }
 
+    inline bool isValue(const BasicStack& stack, int& pos, detail::Type<FunctionView>)
+    {
+        return stack.isFunction(pos++);
+    }
+
     namespace detail
     {
         template <>

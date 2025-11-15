@@ -1,6 +1,7 @@
 #ifndef LATTICE_TABLE_H
 #define LATTICE_TABLE_H
 
+#include "basicstack.hpp"
 #include "convert.hpp"
 #include "object.hpp"
 
@@ -17,6 +18,12 @@ namespace lat
     {
         BasicStack& mStack;
         int mIndex;
+
+        TableView(BasicStack& stack, int index)
+            : mStack(stack)
+            , mIndex(index)
+        {
+        }
 
         int pushTableValue(int table, bool pop);
         void setTableValue(int table);
@@ -89,14 +96,10 @@ namespace lat
 
         template <class>
         friend class IndexedTableView;
+        friend class BasicStack;
+        friend class ObjectView;
 
     public:
-        TableView(BasicStack& stack, int index)
-            : mStack(stack)
-            , mIndex(index)
-        {
-        }
-
         operator ObjectView() noexcept { return ObjectView(mStack, mIndex); }
 
         template <class Key, class... Path>
@@ -182,10 +185,21 @@ namespace lat
     }
 
     template <detail::IndexedTable T>
-    void pushValue(BasicStack& stack, T&& value)
+    inline void pushValue(BasicStack& stack, T&& value)
     {
         value.get().pushTo(stack);
         value.pop();
+    }
+
+    inline TableView pullValue(BasicStack& stack, int& pos, detail::Type<TableView>)
+    {
+        return stack.getObject(pos++).asTable();
+    }
+
+    namespace detail
+    {
+        template <>
+        constexpr inline bool pullsOneValue<TableView> = true;
     }
 }
 

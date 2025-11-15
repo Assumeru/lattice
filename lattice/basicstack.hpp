@@ -11,6 +11,7 @@ struct lua_State;
 
 namespace lat
 {
+    class FunctionView;
     class LuaApi;
     class ObjectView;
     class TableView;
@@ -29,9 +30,11 @@ namespace lat
         const LuaApi api() const;
 
         void protectedCall(int (*)(lua_State*), void*);
+        void protectedCall(int, int);
 
-        friend class TableView;
+        friend class FunctionView;
         friend class ObjectView;
+        friend class TableView;
 
     public:
         bool operator==(const BasicStack& other) const { return mState == other.mState; }
@@ -46,12 +49,14 @@ namespace lat
         int getTop() const;
 
         void pop(std::uint16_t amount = 1);
+        void remove(int index);
 
         bool isBoolean(int index) const;
         bool isNil(int index) const;
         bool isNumber(int index) const;
         bool isString(int index) const;
         bool isTable(int index) const;
+        bool isFunction(int index) const;
 
         ObjectView getObject(int index);
         std::optional<ObjectView> tryGetObject(int index);
@@ -62,7 +67,7 @@ namespace lat
         ObjectView pushNumber(double);
         ObjectView pushString(std::string_view);
         TableView pushTable(int objectSize = 0, int arraySize = 0);
-        void pushFunction(std::string_view lua, const char* name = "");
+        FunctionView pushFunction(std::string_view lua, const char* name = "");
     };
 }
 

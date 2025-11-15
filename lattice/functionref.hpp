@@ -32,7 +32,7 @@ namespace lat
         {
             mBound = std::addressof(function);
             mFunction = [](void* bound, Args&&... args) -> R {
-                if constexpr (std::is_same_v<R, void>)
+                if constexpr (std::is_void_v<R>)
                     (*static_cast<T*>(bound))(std::forward<Args>(args)...);
                 else
                     return (*static_cast<T*>(bound))(std::forward<Args>(args)...);

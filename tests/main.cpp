@@ -1,3 +1,4 @@
+#include <function.hpp>
 #include <lua/api.hpp>
 #include <object.hpp>
 #include <stack.hpp>
@@ -23,10 +24,12 @@ namespace
                 std::cout << "start\n";
                 // std::cout << "string == nil " << static_cast<int>(stack["string"].get().getType()) << '\n';
                 constexpr std::string_view code = "return { a = 2, [2] = 'c', b = { c = 'd' } }";
-                stack.pushFunction(code);
-                lat::LuaApi api(*stack.get());
-                api.call(0, 1);
-                auto object = stack.getObject(-1).asTable();
+                lat::FunctionView f = stack.pushFunction(code);
+                std::cout << "size: " << stack.getTop() << '\n';
+                lat::TableView object = f.invoke<lat::TableView>();
+                std::cout << "size: " << stack.getTop() << '\n';
+                // std::cout << "size: " << stack.getTop() << ", type: " << static_cast<int>(r.getType()) << '\n';
+                // lat::TableView object = stack.getObject(-1).asTable();
                 lat::ObjectView a = object["a"];
                 // lat::ObjectView a = object.get("a");
                 std::cout << "a = " << a.as<int>() << '\n';

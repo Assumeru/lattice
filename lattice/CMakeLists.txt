@@ -4,6 +4,7 @@ target_link_libraries(LibLattice PUBLIC Lua::Lua)
 
 target_sources(LibLattice
     PRIVATE
+        function.cpp
         functionref.hpp
         object.cpp
         stack.cpp
@@ -15,6 +16,7 @@ target_sources(LibLattice
         FILES
             basicstack.hpp
             convert.hpp
+            function.hpp
             object.hpp
             stack.hpp
             state.hpp

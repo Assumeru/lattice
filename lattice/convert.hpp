@@ -4,6 +4,7 @@
 #include "basicstack.hpp"
 #include "object.hpp"
 
+#include <concepts>
 #include <cstddef>
 #include <optional>
 #include <string_view>
@@ -14,32 +15,63 @@ namespace lat
     namespace detail
     {
         template <class T>
+        concept Integer = std::is_integral_v<T> && !std::same_as<T, bool>;
+
+        template <class T>
+        concept Enum = std::is_enum_v<T>;
+
+        template <class T>
         concept Optional = std::same_as<T, std::optional<typename T::value_type>>;
+
+        template <class>
+        constexpr inline bool isTuple = false;
+        template <class... Types>
+        constexpr inline bool isTuple<std::tuple<Types...>> = true;
+
+        template <class T>
+        concept Tuple = isTuple<T>;
 
         template <class T>
         constexpr inline bool isReferenceWrapper = !std::is_same_v<T, std::unwrap_reference_t<T>>;
 
         template <class T>
-        concept PushSpecialization
-            = requires(BasicStack& stack, T&& value) { pushValue(stack, std::forward<T>(value)); };
-
-        template <class T>
         concept StringViewConstructible = std::is_constructible_v<std::string_view, T>;
 
         template <class T>
-        concept Enum = std::is_enum_v<T>;
+        concept PushSpecialized = requires(BasicStack& stack, T&& value) { pushValue(stack, std::forward<T>(value)); };
 
-        struct Nil
+        template <class T>
+        struct Type
         {
+            using type = T;
         };
-    }
 
-    constexpr inline detail::Nil nil{};
+        template <class T>
+        concept ViewPullSpecialized = requires(ObjectView view, Type<T> type) {
+            { pullValue(view, type) } -> std::constructible_from<T>;
+        };
+
+        template <class T>
+        concept PullSpecialized = requires(BasicStack& stack, int& pos, Type<T> type) {
+            { pullValue(stack, pos, type) } -> std::constructible_from<T>;
+        };
+
+        template<class T>
+        constexpr inline bool pullsOneValue = ViewPullSpecialized<T>;
+        template<>
+        constexpr inline bool pullsOneValue<ObjectView> = true;
+    }
 
     inline void pushValue(BasicStack& stack, detail::Nil)
     {
         stack.pushNil();
     }
+
+    // template <detail::Integer T>
+    // inline void pushValue(BasicStack& stack, T&& value)
+    // {
+    //     stack.pushInteger(static_cast<std::ptrdiff_t>(value)));
+    // }
 
     template <detail::StringViewConstructible T>
     inline void pushValue(BasicStack& stack, T&& value)
@@ -74,7 +106,7 @@ namespace lat
         {
             stack.pushString(value);
         }
-        else if constexpr (detail::PushSpecialization<V>)
+        else if constexpr (detail::PushSpecialized<V>)
         {
             pushValue(stack, std::forward<V>(value));
         }
@@ -124,6 +156,60 @@ namespace lat
         {
             // TODO push user data
             static_assert(false, "user data not implemented");
+        }
+    }
+
+    inline detail::Nil pullValue(ObjectView view, detail::Type<detail::Nil>)
+    {
+        return view.asNil();
+    }
+
+    inline bool pullValue(ObjectView view, detail::Type<bool>)
+    {
+        return view.asBool();
+    }
+
+    template <detail::Integer T>
+    inline T pullValue(ObjectView view, detail::Type<T>)
+    {
+        return static_cast<T>(view.asInt());
+    }
+
+    template <std::floating_point T>
+    inline T pullValue(ObjectView view, detail::Type<T>)
+    {
+        return static_cast<T>(view.asFloat());
+    }
+
+    template <std::constructible_from<std::string_view> T>
+    inline T pullValue(ObjectView view, detail::Type<T>)
+    {
+        return view.asString();
+    }
+
+    template <detail::ViewPullSpecialized T>
+    inline T pullValue(BasicStack& stack, int& pos, detail::Type<T> t)
+    {
+        T value = pullValue(stack.getObject(pos), t);
+        stack.remove(pos);
+        return value;
+    }
+
+    inline ObjectView pullValue(BasicStack& stack, int& pos, detail::Type<ObjectView>)
+    {
+        return stack.getObject(pos++);
+    }
+
+    template <class Value, class T = std::remove_cvref_t<Value>>
+    Value pullFromStack(BasicStack& stack, int& pos)
+    {
+        if constexpr (detail::PullSpecialized<T>)
+        {
+            return pullValue(stack, pos, detail::Type<T>{});
+        }
+        else
+        {
+            static_assert(false, "TODO");
         }
     }
 }

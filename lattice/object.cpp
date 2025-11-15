@@ -1,6 +1,7 @@
 #include "object.hpp"
 
 #include "basicstack.hpp"
+#include "function.hpp"
 #include "lua/api.hpp"
 #include "table.hpp"
 
@@ -33,9 +34,21 @@ namespace lat
         return mStack.isTable(mIndex);
     }
 
+    bool ObjectView::isFunction() const
+    {
+        return mStack.isFunction(mIndex);
+    }
+
     LuaType ObjectView::getType() const
     {
         return mStack.api().getType(mIndex);
+    }
+
+    detail::Nil ObjectView::asNil() const
+    {
+        if (!isNil())
+            throw std::runtime_error("value is not nil");
+        return nil;
     }
 
     bool ObjectView::asBool() const
@@ -78,6 +91,13 @@ namespace lat
         if (!isTable())
             throw std::runtime_error("value is not a table");
         return TableView(mStack, mIndex);
+    }
+
+    FunctionView ObjectView::asFunction() const
+    {
+        if (!isFunction())
+            throw std::runtime_error("value is not a function");
+        return FunctionView(mStack, mIndex);
     }
 
     ObjectView ObjectView::pushTo(BasicStack& stack)

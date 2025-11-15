@@ -52,4 +52,14 @@ namespace
             EXPECT_EQ(pushed, value);
         });
     }
+
+    TEST_F(ConversionTest, can_pull_bool)
+    {
+        mState.withStack([](Stack& stack) {
+            stack.pushBoolean(true);
+            int pos = stack.getTop();
+            bool value = pullFromStack<bool>(stack, pos);
+            EXPECT_EQ(value, true);
+        });
+    }
 }

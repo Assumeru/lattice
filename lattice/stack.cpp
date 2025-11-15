@@ -6,6 +6,7 @@
 #include <new>
 #include <stdexcept>
 
+#include "function.hpp"
 #include "lua/api.hpp"
 #include "object.hpp"
 
@@ -25,6 +26,23 @@ namespace
             throw error;
         }
         throw std::runtime_error(fallback);
+    }
+
+    void checkProtectedCallStatus(lat::LuaApi& lua, lat::LuaStatus status)
+    {
+        switch (status)
+        {
+            case lat::LuaStatus::ErrorHandlingError:
+                throwLuaError(lua, "error handler failed");
+            case lat::LuaStatus::MemoryError:
+                throwLuaError(lua, "out of memory");
+            case lat::LuaStatus::RuntimeError:
+                throwLuaError(lua, "error");
+            case lat::LuaStatus::Ok:
+                return;
+            default:
+                throw std::logic_error("invalid state");
+        }
     }
 
     void ensure(auto&& api, std::uint16_t extra)
@@ -69,19 +87,14 @@ namespace lat
     {
         LuaApi lua = api();
         LuaStatus status = lua.protectedCall(function, userData);
-        switch (status)
-        {
-            case LuaStatus::ErrorHandlingError:
-                throwLuaError(lua, "error handler failed");
-            case LuaStatus::MemoryError:
-                throwLuaError(lua, "out of memory");
-            case LuaStatus::RuntimeError:
-                throwLuaError(lua, "error");
-            case LuaStatus::Ok:
-                return;
-            default:
-                throw std::logic_error("invalid state");
-        }
+        checkProtectedCallStatus(lua, status);
+    }
+
+    void BasicStack::protectedCall(int argCount, int resCount)
+    {
+        LuaApi lua = api();
+        LuaStatus status = lua.protectedCall(argCount, resCount);
+        checkProtectedCallStatus(lua, status);
     }
 
     void Stack::call(FunctionRef<void(Stack&)> function)
@@ -153,6 +166,14 @@ namespace lat
         }
     }
 
+    void BasicStack::remove(int index)
+    {
+        LuaApi lua = api();
+        if (index <= 0 || index > lua.getStackSize())
+            throw std::out_of_range("invalid index");
+        lua.remove(index);
+    }
+
     bool BasicStack::isBoolean(int index) const
     {
         return api().isBoolean(index);
@@ -176,6 +197,11 @@ namespace lat
     bool BasicStack::isTable(int index) const
     {
         return api().isTable(index);
+    }
+
+    bool BasicStack::isFunction(int index) const
+    {
+        return api().isFunction(index);
     }
 
     ObjectView BasicStack::getObject(int index)
@@ -220,7 +246,7 @@ namespace lat
         return TableView(*this, push(api(), &LuaApi::createTable, std::max(arraySize, 0), std::max(objectSize, 0)));
     }
 
-    void BasicStack::pushFunction(std::string_view script, const char* name)
+    FunctionView BasicStack::pushFunction(std::string_view script, const char* name)
     {
         if (script.starts_with(LUA_SIGNATURE[0]))
             throw std::invalid_argument("argument cannot be bytecode");
@@ -234,7 +260,7 @@ namespace lat
             case LuaStatus::MemoryError:
                 throwLuaError(lua, "out of memory");
             case LuaStatus::Ok:
-                return;
+                return FunctionView(*this, lua.getStackSize());
             default:
                 throw std::logic_error("invalid state");
         }

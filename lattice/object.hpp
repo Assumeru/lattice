@@ -9,7 +9,22 @@
 
 namespace lat
 {
+    namespace detail
+    {
+        struct Nil
+        {
+        };
+
+        inline bool operator==(const Nil&, const Nil&)
+        {
+            return true;
+        }
+    }
+
+    constexpr inline detail::Nil nil{};
+
     class BasicStack;
+    class FunctionView;
     class TableView;
     enum class LuaType : int;
 
@@ -20,8 +35,6 @@ namespace lat
 
         template <class T>
         static constexpr bool isOptional = std::is_same_v<T, std::optional<typename T::value_type>>;
-
-        friend class TableView;
 
     public:
         ObjectView(BasicStack& stack, int index)
@@ -35,13 +48,16 @@ namespace lat
         bool isNumber() const;
         bool isString() const;
         bool isTable() const;
+        bool isFunction() const;
         LuaType getType() const;
 
+        detail::Nil asNil() const;
         bool asBool() const;
         std::ptrdiff_t asInt() const;
         double asFloat() const;
         std::string_view asString() const;
         TableView asTable() const;
+        FunctionView asFunction() const;
 
         ObjectView pushTo(BasicStack&);
 
@@ -113,6 +129,11 @@ namespace lat
             }
         }
     };
+
+    inline bool operator==(const detail::Nil&, const ObjectView& object)
+    {
+        return object.isNil();
+    }
 }
 
 #endif

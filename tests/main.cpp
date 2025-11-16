@@ -5,7 +5,6 @@
 #include <state.hpp>
 #include <table.hpp>
 
-#include <array>
 #include <iostream>
 
 #include <gtest/gtest.h>
@@ -17,9 +16,6 @@ namespace
         lat::State state;
         try
         {
-            constexpr std::array<lat::Library, 1> toLoad{ lat::Library::String };
-            std::cout << "load libs\n";
-            state.loadLibraries(toLoad);
             state.withStack([](lat::Stack& stack) {
                 std::cout << "start\n";
                 // std::cout << "string == nil " << static_cast<int>(stack["string"].get().getType()) << '\n';

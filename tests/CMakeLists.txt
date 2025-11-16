@@ -17,6 +17,8 @@ target_sources(LatticeTests
     PRIVATE
         conversion.cpp
         debug.cpp
+        function.cpp
+        library.cpp
         main.cpp
         memory.cpp
         table.cpp

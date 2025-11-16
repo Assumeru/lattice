@@ -5,6 +5,7 @@
 #include "lua/api.hpp"
 #include "table.hpp"
 
+#include <ostream>
 #include <stdexcept>
 
 namespace lat
@@ -111,5 +112,26 @@ namespace lat
         if (!sameStack)
             api.moveValuesTo(stack.api(), 1);
         return ObjectView(stack, stack.getTop());
+    }
+
+    std::ostream& operator<<(std::ostream& stream, ObjectView value)
+    {
+        if (value.isNil())
+            return stream << "nil";
+        else if (value.isBoolean())
+        {
+            if (value.asBool())
+                return stream << "true";
+            return stream << "false";
+        }
+        else if (value.isNumber())
+            return stream << value.asFloat();
+        else if (value.isString())
+            return stream << '"' << value.asString() << '"';
+        else if (value.isFunction())
+            return stream << "<function>";
+        else if (value.isTable())
+            return stream << "<table>";
+        return stream << "invalid object view";
     }
 }

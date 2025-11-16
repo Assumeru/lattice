@@ -139,6 +139,8 @@ namespace lat
 
         template <class T>
         concept PushSpecialized = requires(BasicStack& stack, T&& value) { pushValue(stack, std::forward<T>(value)); };
+        template <class T>
+        concept PreConvPushSpecialized = requires(BasicStack& stack, T&& value) { pushPreConvValue(stack, std::forward<T>(value)); };
 
         template <class T>
         concept GetFromViewSpecialized = requires(ObjectView view, Type<T> type) {
@@ -179,6 +181,10 @@ namespace lat
             else if constexpr (std::is_same_v<T, std::string_view>)
             {
                 stack.pushString(value);
+            }
+            else if constexpr (PreConvPushSpecialized<V>)
+            {
+                pushPreConvValue(stack, std::forward<V>(value));
             }
             else if constexpr (PushSpecialized<V>)
             {

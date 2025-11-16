@@ -9,6 +9,9 @@
 
 namespace lat
 {
+    template <class...>
+    class ReturningFunctionView;
+
     class FunctionView
     {
         BasicStack& mStack;
@@ -92,12 +95,42 @@ namespace lat
             invoke<void>(std::forward<Args>(args)...);
         }
 
+        template <class... Ret>
+        ReturningFunctionView<Ret...> returning();
+
         operator ObjectView() noexcept { return ObjectView(mStack, mIndex); }
     };
 
     // Workaround for GCC < 14 https://gcc.gnu.org/bugzilla/show_bug.cgi?id=71954
     template <class... Types>
     constexpr bool FunctionView::allSpecialized<std::tuple<Types...>> = (true && ... && detail::pullsOneValue<Types>);
+
+    template <class... Ret>
+    class ReturningFunctionView
+    {
+        FunctionView mFunction;
+
+    public:
+        ReturningFunctionView(FunctionView function)
+            : mFunction(function)
+        {
+        }
+
+        template <class... Args>
+        auto operator()(Args&&... args)
+        {
+            return invoke<Ret...>(std::forward<Args>(args)...);
+        }
+
+        operator FunctionView() noexcept { return mFunction; }
+        operator ObjectView() noexcept { return mFunction; }
+    };
+
+    template <class... Ret>
+    ReturningFunctionView<Ret...> FunctionView::returning()
+    {
+        return ReturningFunctionView<Ret...>(*this);
+    }
 
     inline FunctionView pullValue(BasicStack& stack, int& pos, Type<FunctionView>)
     {

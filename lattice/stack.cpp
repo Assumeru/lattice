@@ -252,6 +252,8 @@ namespace lat
             throw std::invalid_argument("argument cannot be bytecode");
         LuaApi lua = api();
         ::ensure(lua, 1);
+        if (name == nullptr)
+            name = "";
         LuaStatus status = lua.loadFunction(script, name);
         switch (status)
         {

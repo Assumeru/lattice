@@ -67,7 +67,7 @@ namespace lat
         ObjectView pushNumber(double);
         ObjectView pushString(std::string_view);
         TableView pushTable(int objectSize = 0, int arraySize = 0);
-        FunctionView pushFunction(std::string_view lua, const char* name = "");
+        FunctionView pushFunction(std::string_view lua, const char* name = nullptr);
     };
 }
 

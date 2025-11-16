@@ -38,8 +38,8 @@ namespace lat
             checkSingleValue(prev);
         }
 
-        template <class... Path>
-        ObjectView getImpl(Path&&... path)
+        template <class Value, class... Path>
+        Value getImpl(Path&&... path)
         {
             const int top = mStack.getTop();
             try
@@ -53,7 +53,7 @@ namespace lat
                         ++i;
                     }(),
                     ...);
-                return ObjectView(mStack, table);
+                return detail::pullFromStack<Value>(mStack, table);
             }
             catch (...)
             {
@@ -102,10 +102,10 @@ namespace lat
     public:
         operator ObjectView() noexcept { return ObjectView(mStack, mIndex); }
 
-        template <class Key, class... Path>
-        ObjectView get(Key&& key, Path&&... args)
+        template <class Value = ObjectView, class Key, class... Path>
+        Value get(Key&& key, Path&&... args)
         {
-            return getImpl(std::forward<Key>(key), std::forward<Path>(args)...);
+            return getImpl<Value>(std::forward<Key>(key), std::forward<Path>(args)...);
         }
 
         template <class Value, class Key, class... Path>
@@ -124,9 +124,6 @@ namespace lat
     {
         template <class T, class U = std::remove_reference_t<T>>
         concept IndexedTable = std::is_same_v<U, IndexedTableView<typename U::type>>;
-
-        template <IndexedTable T>
-        void pushValue(BasicStack&, T&&);
     }
 
     template <class Path>
@@ -147,7 +144,7 @@ namespace lat
         template <class>
         friend class IndexedTableView;
         template <detail::IndexedTable T>
-        friend void pushValue(BasicStack&, T&&);
+        friend void pushPreConvValue(BasicStack&, T&&);
 
     public:
         using type = Path;
@@ -159,12 +156,18 @@ namespace lat
             return IndexedTableView<decltype(path)>(mTable, std::move(path));
         }
 
-        ObjectView get()
+        template <class T = ObjectView>
+        auto get()
         {
-            return std::apply([&](auto&&... path) { return mTable.get(std::forward<decltype(path)>(path)...); }, mPath);
+            return std::apply(
+                [&](auto&&... path) { return mTable.get<T>(std::forward<decltype(path)>(path)...); }, mPath);
         }
 
-        operator ObjectView() { return get(); }
+        template <class T>
+        operator T()
+        {
+            return get<T>();
+        }
 
         template <class Value>
         void set(Value&& value)
@@ -188,7 +191,7 @@ namespace lat
     }
 
     template <detail::IndexedTable T>
-    inline void pushValue(BasicStack& stack, T&& value)
+    inline void pushPreConvValue(BasicStack& stack, T&& value)
     {
         value.get().pushTo(stack);
         value.pop();

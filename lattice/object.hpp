@@ -2,6 +2,7 @@
 #define LATTICE_OBJECT_H
 
 #include <cstddef>
+#include <iosfwd>
 #include <string_view>
 
 namespace lat
@@ -57,6 +58,8 @@ namespace lat
 
         template <class T>
         T as() const;
+
+        friend std::ostream& operator<<(std::ostream& stream, ObjectView value);
     };
 
     inline bool operator==(const Nil&, const ObjectView& object)

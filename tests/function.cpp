@@ -17,8 +17,8 @@ namespace
     {
         mState.loadLibraries({ { Library::Math } });
         mState.withStack([](Stack& stack) {
-            ObjectView min = stack["math"]["min"];
-            int result = min.asFunction().invoke<int>(3, 2, 1);
+            FunctionView min = stack["math"]["min"];
+            int result = min.invoke<int>(3, 2, 1);
             EXPECT_EQ(result, 1);
         });
     }

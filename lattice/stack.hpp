@@ -3,6 +3,7 @@
 
 #include "basicstack.hpp"
 #include "convert.hpp"
+#include "function.hpp"
 #include "table.hpp"
 
 namespace lat
@@ -21,6 +22,12 @@ namespace lat
         auto operator[](auto key) { return globals()[key]; }
 
         TableView pushArray(int size) { return pushTable(0, size); }
+
+        template <class... Ret>
+        ReturningFunctionView<Ret...> pushFunctionReturning(std::string_view lua, const char* name = nullptr)
+        {
+            return pushFunction(lua, name).returning<Ret...>();
+        }
 
         template <class T>
         ObjectView push(T&& value)

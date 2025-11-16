@@ -111,7 +111,7 @@ namespace lat
 
     inline FunctionView getValue(ObjectView view, Type<FunctionView>)
     {
-      return view.asFunction();
+        return view.asFunction();
     }
 
     namespace detail

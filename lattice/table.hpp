@@ -206,7 +206,7 @@ namespace lat
 
     inline TableView getValue(ObjectView view, Type<TableView>)
     {
-      return view.asTable();
+        return view.asTable();
     }
 
     namespace detail

@@ -308,14 +308,6 @@ namespace lat
         {
             return *this;
         }
-        else if constexpr (std::is_same_v<T, TableView>)
-        {
-            return asTable();
-        }
-        else if constexpr (std::is_same_v<T, FunctionView>)
-        {
-            return asFunction();
-        }
         else if constexpr (detail::Optional<T>)
         {
             if (isNil())

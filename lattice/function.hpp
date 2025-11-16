@@ -109,6 +109,11 @@ namespace lat
         return stack.isFunction(pos++);
     }
 
+    inline FunctionView getValue(ObjectView view, Type<FunctionView>)
+    {
+      return view.asFunction();
+    }
+
     namespace detail
     {
         template <>

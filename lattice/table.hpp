@@ -204,6 +204,11 @@ namespace lat
         return stack.isTable(pos++);
     }
 
+    inline TableView getValue(ObjectView view, Type<TableView>)
+    {
+      return view.asTable();
+    }
+
     namespace detail
     {
         template <>

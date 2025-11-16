@@ -132,8 +132,8 @@ namespace lat
     template <class Path>
     class IndexedTableView
     {
-        Path mPath;
         TableView mTable;
+        Path mPath;
 
         IndexedTableView(const TableView& table, Path&& path)
             : mTable(table)

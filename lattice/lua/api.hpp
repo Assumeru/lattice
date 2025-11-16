@@ -44,7 +44,11 @@ namespace lat
 
         bool equal(int index1, int index2) { return lua_equal(mState, index1, index2); }
 
-        [[noreturn]] void error() { lua_error(mState); }
+        [[noreturn]] void error()
+        {
+            lua_error(mState);
+            throw "unreachable";
+        }
 
         void stopGarbageCollector() { gc(LUA_GCSTOP, 0); }
 
@@ -238,6 +242,7 @@ namespace lat
         [[noreturn]] void raiseArgumentError(int argPos, const char* extramsg)
         {
             luaL_argerror(mState, argPos, extramsg);
+            throw "unreachable";
         }
 
         bool callMetamethod(int obj, const char* key) { return luaL_callmeta(mState, obj, key); }
@@ -297,6 +302,7 @@ namespace lat
         [[noreturn]] void raiseArgumentTypeError(int argPos, const char* expected)
         {
             luaL_typerror(mState, argPos, expected);
+            throw "unreachable";
         }
 
         void removeReferenceFrom(int table, int ref) const noexcept { luaL_unref(mState, table, ref); }

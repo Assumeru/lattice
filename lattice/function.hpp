@@ -5,6 +5,8 @@
 #include "convert.hpp"
 #include "object.hpp"
 
+#include <limits>
+
 namespace lat
 {
     class FunctionView
@@ -26,8 +28,6 @@ namespace lat
 
         template <class>
         constexpr static bool allSpecialized = false;
-        template <class... Types>
-        constexpr static bool allSpecialized<std::tuple<Types...>> = true && detail::pullsOneValue<Types>...;
 
         template <class... Types>
         std::tuple<Types...> pullTuple(Type<std::tuple<Types...>>, int pos)
@@ -94,6 +94,10 @@ namespace lat
 
         operator ObjectView() noexcept { return ObjectView(mStack, mIndex); }
     };
+
+    // Workaround for GCC < 14 https://gcc.gnu.org/bugzilla/show_bug.cgi?id=71954
+    template <class... Types>
+    constexpr bool FunctionView::allSpecialized<std::tuple<Types...>> = (true && ... && detail::pullsOneValue<Types>);
 
     inline FunctionView pullValue(BasicStack& stack, int& pos, Type<FunctionView>)
     {

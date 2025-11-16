@@ -47,7 +47,7 @@ namespace
         mState.withStack([](Stack& stack) {
             TableView table = stack.pushTable();
             int top = stack.getTop();
-            EXPECT_ANY_THROW(ObjectView object = table["a"]["b"]);
+            EXPECT_ANY_THROW(table["a"]["b"].get());
             EXPECT_EQ(top, stack.getTop());
         });
     }

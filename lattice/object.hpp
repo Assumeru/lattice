@@ -6,19 +6,16 @@
 
 namespace lat
 {
-    namespace detail
+    struct Nil
     {
-        struct Nil
-        {
-        };
+    };
 
-        inline bool operator==(const Nil&, const Nil&)
-        {
-            return true;
-        }
+    inline bool operator==(const Nil&, const Nil&)
+    {
+        return true;
     }
 
-    constexpr inline detail::Nil nil{};
+    constexpr inline Nil nil{};
 
     class BasicStack;
     class FunctionView;
@@ -45,7 +42,7 @@ namespace lat
         bool isFunction() const;
         LuaType getType() const;
 
-        detail::Nil asNil() const;
+        Nil asNil() const;
         bool asBool() const;
         std::ptrdiff_t asInt() const;
         double asFloat() const;
@@ -62,7 +59,7 @@ namespace lat
         T as() const;
     };
 
-    inline bool operator==(const detail::Nil&, const ObjectView& object)
+    inline bool operator==(const Nil&, const ObjectView& object)
     {
         return object.isNil();
     }

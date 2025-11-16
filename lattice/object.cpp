@@ -44,7 +44,7 @@ namespace lat
         return mStack.api().getType(mIndex);
     }
 
-    detail::Nil ObjectView::asNil() const
+    Nil ObjectView::asNil() const
     {
         if (!isNil())
             throw std::runtime_error("value is not nil");

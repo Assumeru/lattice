@@ -34,7 +34,7 @@ namespace lat
         void pushSingleObject(T&& object)
         {
             const int prev = mStack.getTop();
-            pushToStack(mStack, std::forward<T>(object));
+            detail::pushToStack(mStack, std::forward<T>(object));
             checkSingleValue(prev);
         }
 
@@ -124,6 +124,9 @@ namespace lat
     {
         template <class T, class U = std::remove_reference_t<T>>
         concept IndexedTable = std::is_same_v<U, IndexedTableView<typename U::type>>;
+
+        template <IndexedTable T>
+        void pushValue(BasicStack&, T&&);
     }
 
     template <class Path>
@@ -191,12 +194,12 @@ namespace lat
         value.pop();
     }
 
-    inline TableView pullValue(BasicStack& stack, int& pos, detail::Type<TableView>)
+    inline TableView pullValue(BasicStack& stack, int& pos, Type<TableView>)
     {
         return stack.getObject(pos++).asTable();
     }
 
-    inline bool isValue(const BasicStack& stack, int& pos, detail::Type<TableView>)
+    inline bool isValue(const BasicStack& stack, int& pos, Type<TableView>)
     {
         return stack.isTable(pos++);
     }

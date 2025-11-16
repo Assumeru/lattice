@@ -12,6 +12,13 @@
 
 namespace lat
 {
+    // Sentinel value for template specialization
+    template <class T>
+    struct Type
+    {
+        using type = T;
+    };
+
     namespace detail
     {
         template <class T>
@@ -40,14 +47,98 @@ namespace lat
         template <class T>
         concept StringViewConstructible = std::is_constructible_v<std::string_view, T>;
 
-        template <class T>
-        concept PushSpecialized = requires(BasicStack& stack, T&& value) { pushValue(stack, std::forward<T>(value)); };
+        inline void pushValue(BasicStack& stack, Nil)
+        {
+            stack.pushNil();
+        }
+
+        template <StringViewConstructible T>
+        inline void pushValue(BasicStack& stack, T&& value)
+        {
+            stack.pushString(value);
+        }
+
+        template <Enum T>
+        inline void pushValue(BasicStack& stack, T&& value)
+        {
+            using EType = std::underlying_type_t<T>;
+            stack.pushInteger(static_cast<EType>(value));
+        }
+
+        inline bool isValue(const BasicStack& stack, int& pos, Type<Nil>)
+        {
+            return stack.isNil(pos++);
+        }
+
+        inline bool isValue(const BasicStack& stack, int& pos, Type<bool>)
+        {
+            return stack.isBoolean(pos++);
+        }
+
+        template <Number T>
+        inline bool isValue(const BasicStack& stack, int& pos, Type<T>)
+        {
+            return stack.isNumber(pos++);
+        }
+
+        template <std::constructible_from<std::string_view> T>
+        inline bool isValue(const BasicStack& stack, int& pos, Type<T>)
+        {
+            return stack.isString(pos++);
+        }
+
+        inline bool isValue(const BasicStack& stack, int& pos, Type<ObjectView>)
+        {
+            return stack.getTop() >= pos++;
+        }
+
+        template <Optional T>
+        inline bool isValue(const BasicStack& stack, int& pos, Type<T>)
+        {
+            if (stack.isNil(pos))
+            {
+                ++pos;
+                return true;
+            }
+            using OptT = typename T::value_type;
+            return stackValueIs<OptT>(stack, pos);
+        }
+
+        inline Nil getValue(ObjectView view, Type<Nil>)
+        {
+            return view.asNil();
+        }
+
+        inline bool getValue(ObjectView view, Type<bool>)
+        {
+            return view.asBool();
+        }
+
+        template <Integer T>
+        inline T getValue(ObjectView view, Type<T>)
+        {
+            return static_cast<T>(view.asInt());
+        }
+
+        template <std::floating_point T>
+        inline T getValue(ObjectView view, Type<T>)
+        {
+            return static_cast<T>(view.asFloat());
+        }
+
+        template <std::constructible_from<std::string_view> T>
+        inline T getValue(ObjectView view, Type<T>)
+        {
+            return T(view.asString());
+        }
+
+        inline ObjectView pullValue(BasicStack& stack, int& pos, Type<ObjectView>)
+        {
+            return stack.getObject(pos++);
+        }
 
         template <class T>
-        struct Type
-        {
-            using type = T;
-        };
+        concept PushSpecialized = requires(BasicStack& stack, T&& value) { pushValue(stack, std::forward<T>(value)); };
 
         template <class T>
         concept GetFromViewSpecialized = requires(ObjectView view, Type<T> type) {
@@ -60,231 +151,141 @@ namespace lat
         };
 
         template <class T>
+        concept IsSpecialized = requires(const BasicStack& stack, int& pos, Type<T> type) {
+            { isValue(stack, pos, type) } -> std::same_as<bool>;
+        };
+
+        template <class T>
         constexpr inline bool pullsOneValue = GetFromViewSpecialized<T>;
         template <>
         constexpr inline bool pullsOneValue<ObjectView> = true;
 
-        template <class T>
-        concept IsSpecialized = requires(const BasicStack& stack, int& pos, Type<T> type) {
-            { isValue(stack, pos, type) } -> std::same_as<bool>;
-        };
-    }
-
-    inline void pushValue(BasicStack& stack, detail::Nil)
-    {
-        stack.pushNil();
-    }
-
-    template <detail::StringViewConstructible T>
-    inline void pushValue(BasicStack& stack, T&& value)
-    {
-        stack.pushString(value);
-    }
-
-    template <detail::Enum T>
-    inline void pushValue(BasicStack& stack, T&& value)
-    {
-        using EType = std::underlying_type_t<T>;
-        stack.pushInteger(static_cast<EType>(value));
-    }
-
-    template <class Value, bool light = false, class T = std::remove_cvref_t<Value>,
-        class V = std::remove_volatile_t<Value>>
-    inline void pushToStack(BasicStack& stack, Value&& value)
-    {
-        if constexpr (std::is_same_v<T, bool>)
+        template <class Value, bool light = false, class T = std::remove_cvref_t<Value>,
+            class V = std::remove_volatile_t<Value>>
+        inline void pushToStack(BasicStack& stack, Value&& value)
         {
-            stack.pushBoolean(value);
-        }
-        else if constexpr (std::is_integral_v<T>)
-        {
-            stack.pushInteger(static_cast<std::ptrdiff_t>(value));
-        }
-        else if constexpr (std::is_floating_point_v<T>)
-        {
-            stack.pushNumber(static_cast<double>(value));
-        }
-        else if constexpr (std::is_same_v<T, std::string_view>)
-        {
-            stack.pushString(value);
-        }
-        else if constexpr (detail::PushSpecialized<V>)
-        {
-            pushValue(stack, std::forward<V>(value));
-        }
-        else if constexpr (detail::Optional<T>)
-        {
-            if (value)
+            if constexpr (std::is_same_v<T, bool>)
             {
-                using OptT = typename V::value_type;
-                pushToStack<OptT>(stack, std::forward<OptT>(*value));
+                stack.pushBoolean(value);
+            }
+            else if constexpr (std::is_integral_v<T>)
+            {
+                stack.pushInteger(static_cast<std::ptrdiff_t>(value));
+            }
+            else if constexpr (std::is_floating_point_v<T>)
+            {
+                stack.pushNumber(static_cast<double>(value));
+            }
+            else if constexpr (std::is_same_v<T, std::string_view>)
+            {
+                stack.pushString(value);
+            }
+            else if constexpr (PushSpecialized<V>)
+            {
+                pushValue(stack, std::forward<V>(value));
+            }
+            else if constexpr (Optional<T>)
+            {
+                if (value)
+                {
+                    using OptT = typename V::value_type;
+                    pushToStack<OptT>(stack, std::forward<OptT>(*value));
+                }
+                else
+                    stack.pushNil();
+            }
+            else if constexpr (isReferenceWrapper<T>)
+            {
+                using RefT = typename V::type;
+                pushToStack<RefT&, true>(value.get());
+            }
+            else if constexpr (std::is_pointer_v<T>)
+            {
+                if (value == nullptr)
+                    stack.pushNil();
+                else
+                {
+                    using RefT = std::add_lvalue_reference_t<std::remove_pointer_t<V>>;
+                    pushToStack<RefT, true>(std::forward<RefT>(*value));
+                }
+            }
+            else if constexpr (std::is_same_v<T, ObjectView>)
+            {
+                if constexpr (std::is_const_v<V>)
+                    static_assert(false, "cannot push const object");
+                value.pushTo(stack);
+            }
+            else if constexpr (std::is_convertible_v<T, ObjectView>)
+            {
+                if constexpr (std::is_const_v<V>)
+                    static_assert(false, "cannot push const object");
+                ObjectView(value).pushTo(stack);
+            }
+            else if constexpr (light)
+            {
+                // TODO push light user data
+                static_assert(false, "light user data not implemented");
             }
             else
-                stack.pushNil();
-        }
-        else if constexpr (detail::isReferenceWrapper<T>)
-        {
-            using RefT = typename V::type;
-            pushToStack<RefT&, true>(value.get());
-        }
-        else if constexpr (std::is_pointer_v<T>)
-        {
-            if (value == nullptr)
-                stack.pushNil();
-            else
             {
-                using RefT = std::add_lvalue_reference_t<std::remove_pointer_t<V>>;
-                pushToStack<RefT, true>(std::forward<RefT>(*value));
+                // TODO push user data
+                static_assert(false, "user data not implemented");
             }
         }
-        else if constexpr (std::is_same_v<T, ObjectView>)
+
+        template <class Value, class T = std::remove_cvref_t<Value>>
+        inline bool stackValueIs(const BasicStack& stack, int& pos)
         {
-            if constexpr (std::is_const_v<V>)
-                static_assert(false, "cannot push const object");
-            value.pushTo(stack);
+            if constexpr (std::is_reference_v<Value>)
+            {
+                static_assert(false, "a stack value is not a reference");
+            }
+            else if constexpr (IsSpecialized<T>)
+            {
+                return isValue(stack, pos, Type<T>{});
+            }
+            else
+            {
+                static_assert(false, "TODO");
+            }
         }
-        else if constexpr (std::is_convertible_v<T, ObjectView>)
+
+        template <Optional T>
+        inline T pullValue(BasicStack& stack, int& pos, Type<T>)
         {
-            if constexpr (std::is_const_v<V>)
-                static_assert(false, "cannot push const object");
-            ObjectView(value).pushTo(stack);
+            if (stack.isNil(pos))
+            {
+                stack.remove(pos);
+                return {};
+            }
+            int p = pos;
+            using OptT = typename T::value_type;
+            if (!stackValueIs<OptT>(stack, p))
+                return {};
+            return pullFromStack<OptT>(stack, pos);
         }
-        else if constexpr (light)
+
+        template <class Value, class T = std::remove_cvref_t<Value>>
+        inline Value pullFromStack(BasicStack& stack, int& pos)
         {
-            // TODO push light user data
-            static_assert(false, "light user data not implemented");
-        }
-        else
-        {
-            // TODO push user data
-            static_assert(false, "user data not implemented");
-        }
-    }
-
-    inline bool isValue(const BasicStack& stack, int& pos, detail::Type<detail::Nil>)
-    {
-        return stack.isNil(pos++);
-    }
-
-    inline bool isValue(const BasicStack& stack, int& pos, detail::Type<bool>)
-    {
-        return stack.isBoolean(pos++);
-    }
-
-    template <detail::Number T>
-    inline bool isValue(const BasicStack& stack, int& pos, detail::Type<T>)
-    {
-        return stack.isNumber(pos++);
-    }
-
-    template <std::constructible_from<std::string_view> T>
-    inline bool isValue(const BasicStack& stack, int& pos, detail::Type<T>)
-    {
-        return stack.isString(pos++);
-    }
-
-    inline bool isValue(const BasicStack& stack, int& pos, detail::Type<ObjectView>)
-    {
-        return stack.getTop() >= pos++;
-    }
-
-    template <detail::Optional T>
-    inline bool isValue(const BasicStack& stack, int& pos, detail::Type<T>)
-    {
-        if (stack.isNil(pos))
-        {
-            ++pos;
-            return true;
-        }
-        using OptT = typename T::value_type;
-        return stackValueIs<OptT>(stack, pos);
-    }
-
-    template <class Value, class T = std::remove_cvref_t<Value>>
-    inline bool stackValueIs(const BasicStack& stack, int& pos)
-    {
-        if constexpr (std::is_reference_v<Value>)
-        {
-            static_assert(false, "a stack value is not a reference");
-        }
-        else if constexpr (detail::IsSpecialized<T>)
-        {
-            return isValue(stack, pos, detail::Type<T>{});
-        }
-        else
-        {
-            static_assert(false, "TODO");
-        }
-    }
-
-    inline detail::Nil getValue(ObjectView view, detail::Type<detail::Nil>)
-    {
-        return view.asNil();
-    }
-
-    inline bool getValue(ObjectView view, detail::Type<bool>)
-    {
-        return view.asBool();
-    }
-
-    template <detail::Integer T>
-    inline T getValue(ObjectView view, detail::Type<T>)
-    {
-        return static_cast<T>(view.asInt());
-    }
-
-    template <std::floating_point T>
-    inline T getValue(ObjectView view, detail::Type<T>)
-    {
-        return static_cast<T>(view.asFloat());
-    }
-
-    template <std::constructible_from<std::string_view> T>
-    inline T getValue(ObjectView view, detail::Type<T>)
-    {
-        return view.asString();
-    }
-
-    inline ObjectView pullValue(BasicStack& stack, int& pos, detail::Type<ObjectView>)
-    {
-        return stack.getObject(pos++);
-    }
-
-    template <detail::Optional T>
-    inline T pullValue(BasicStack& stack, int& pos, detail::Type<T>)
-    {
-        if (stack.isNil(pos))
-        {
-            stack.remove(pos);
-            return {};
-        }
-        int p = pos;
-        using OptT = typename T::value_type;
-        if (!stackValueIs<OptT>(stack, p))
-            return {};
-        return pullFromStack<OptT>(stack, pos);
-    }
-
-    template <class Value, class T = std::remove_cvref_t<Value>>
-    inline Value pullFromStack(BasicStack& stack, int& pos)
-    {
-        if constexpr (std::is_reference_v<Value>)
-        {
-            static_assert(false, "a stack value is not a reference");
-        }
-        else if constexpr (detail::PullSpecialized<T>)
-        {
-            return pullValue(stack, pos, detail::Type<T>{});
-        }
-        else if constexpr (detail::GetFromViewSpecialized<T>)
-        {
-            T value = getValue(stack.getObject(pos), detail::Type<T>{});
-            stack.remove(pos);
-            return value;
-        }
-        else
-        {
-            static_assert(false, "TODO");
+            if constexpr (std::is_reference_v<Value>)
+            {
+                static_assert(false, "a stack value is not a reference");
+            }
+            else if constexpr (PullSpecialized<T>)
+            {
+                return pullValue(stack, pos, Type<T>{});
+            }
+            else if constexpr (GetFromViewSpecialized<T>)
+            {
+                T value = getValue(stack.getObject(pos), Type<T>{});
+                stack.remove(pos);
+                return value;
+            }
+            else
+            {
+                static_assert(false, "TODO");
+            }
         }
     }
 
@@ -292,7 +293,7 @@ namespace lat
     bool ObjectView::is() const
     {
         int pos = mIndex;
-        return stackValueIs<T>(mStack, pos) && mIndex - pos <= 1;
+        return detail::stackValueIs<T>(mStack, pos) && mIndex - pos <= 1;
     }
 
     template <class Value>
@@ -322,11 +323,11 @@ namespace lat
             using OptT = typename T::value_type;
             if (!is<OptT>())
                 return {};
-            return getValue(*this, detail::Type<OptT>{});
+            return detail::getValue(*this, Type<OptT>{});
         }
         else if constexpr (detail::GetFromViewSpecialized<T>)
         {
-            return getValue(*this, detail::Type<T>{});
+            return detail::getValue(*this, Type<T>{});
         }
         else
         {

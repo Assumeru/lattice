@@ -30,9 +30,9 @@ namespace lat
         constexpr static bool allSpecialized<std::tuple<Types...>> = true && detail::pullsOneValue<Types>...;
 
         template <class... Types>
-        std::tuple<Types...> pullTuple(detail::Type<std::tuple<Types...>>, int pos)
+        std::tuple<Types...> pullTuple(Type<std::tuple<Types...>>, int pos)
         {
-            auto values = std::make_tuple<Types...>(pullFromStack<Types>(mStack, pos)...);
+            auto values = std::make_tuple<Types...>(detail::pullFromStack<Types>(mStack, pos)...);
             cleanUp(pos);
             return values;
         }
@@ -65,15 +65,15 @@ namespace lat
             {
                 ObjectView(*this).pushTo(mStack);
                 int pos = mStack.getTop();
-                (pushToStack(mStack, std::forward<Args>(args)), ...);
+                (detail::pushToStack(mStack, std::forward<Args>(args)), ...);
                 call(pos, resCount);
                 if constexpr (resCount != 0)
                 {
                     if constexpr (detail::Tuple<Ret>)
-                        return pullTuple(detail::Type<Ret>{}, pos);
+                        return pullTuple(Type<Ret>{}, pos);
                     else
                     {
-                        Ret value = pullFromStack<Ret>(mStack, pos);
+                        Ret value = detail::pullFromStack<Ret>(mStack, pos);
                         cleanUp(pos);
                         return value;
                     }
@@ -95,12 +95,12 @@ namespace lat
         operator ObjectView() noexcept { return ObjectView(mStack, mIndex); }
     };
 
-    inline FunctionView pullValue(BasicStack& stack, int& pos, detail::Type<FunctionView>)
+    inline FunctionView pullValue(BasicStack& stack, int& pos, Type<FunctionView>)
     {
         return stack.getObject(pos++).asFunction();
     }
 
-    inline bool isValue(const BasicStack& stack, int& pos, detail::Type<FunctionView>)
+    inline bool isValue(const BasicStack& stack, int& pos, Type<FunctionView>)
     {
         return stack.isFunction(pos++);
     }

@@ -15,8 +15,9 @@ namespace
     TEST_F(ConversionTest, can_push_nil_constant)
     {
         mState.withStack([](Stack& stack) {
-            pushToStack(stack, nil);
-            EXPECT_TRUE(stack.isNil(-1));
+            ObjectView view = stack.push(nil);
+            EXPECT_TRUE(view.isNil());
+            EXPECT_TRUE(view.is<Nil>());
         });
     }
 
@@ -28,18 +29,19 @@ namespace
     TEST_F(ConversionTest, can_push_enum_class)
     {
         mState.withStack([](Stack& stack) {
-            pushToStack(stack, Enum::Test);
-            std::ptrdiff_t pushed = stack.getObject(-1).asInt();
-            EXPECT_EQ(pushed, static_cast<std::ptrdiff_t>(Enum::Test));
+            ObjectView view = stack.push(Enum::Test);
+            EXPECT_EQ(view.asInt(), static_cast<std::ptrdiff_t>(Enum::Test));
+            EXPECT_EQ(view.asInt(), view.as<std::ptrdiff_t>());
         });
     }
 
     TEST_F(ConversionTest, can_push_string_literal)
     {
         mState.withStack([](Stack& stack) {
-            pushToStack(stack, "abc");
-            std::string_view pushed = stack.getObject(-1).asString();
-            EXPECT_EQ(pushed, "abc");
+            ObjectView view = stack.push("abc");
+            EXPECT_EQ(view.asString(), "abc");
+            EXPECT_EQ(view.as<std::string_view>(), "abc");
+            EXPECT_EQ(view.as<std::string>(), "abc");
         });
     }
 
@@ -47,18 +49,31 @@ namespace
     {
         mState.withStack([](Stack& stack) {
             const int value = 456;
-            pushToStack(stack, value);
-            std::ptrdiff_t pushed = stack.getObject(-1).asInt();
-            EXPECT_EQ(pushed, value);
+            ObjectView view = stack.push(value);
+            EXPECT_EQ(view.as<int>(), value);
         });
     }
 
-    TEST_F(ConversionTest, can_pull_bool)
+    TEST_F(ConversionTest, can_convert_bool)
     {
         mState.withStack([](Stack& stack) {
-            ObjectView pushed = stack.pushBoolean(true);
-            bool value = pushed.as<bool>();
-            EXPECT_EQ(value, true);
+            ObjectView view = stack.push(true);
+            EXPECT_EQ(view.as<bool>(), true);
+            EXPECT_EQ(view.asBool(), true);
+        });
+    }
+
+    TEST_F(ConversionTest, can_convert_float)
+    {
+        mState.withStack([](Stack& stack) {
+            float value = 1.2f;
+            ObjectView view = stack.push(value);
+            EXPECT_EQ(view.as<float>(), value);
+            EXPECT_EQ(view.as<double>(), value);
+            EXPECT_EQ(view.as<int>(), 1);
+            EXPECT_TRUE(view.is<int>());
+            EXPECT_TRUE(view.is<float>());
+            EXPECT_TRUE(view.is<double>());
         });
     }
 }

@@ -2,6 +2,7 @@
 #define LATTICE_STACK_H
 
 #include "basicstack.hpp"
+#include "convert.hpp"
 #include "table.hpp"
 
 namespace lat
@@ -20,6 +21,13 @@ namespace lat
         auto operator[](auto key) { return globals()[key]; }
 
         TableView pushArray(int size) { return pushTable(0, size); }
+
+        template <class T>
+        ObjectView push(T&& value)
+        {
+            detail::pushToStack(*this, std::forward<T>(value));
+            return getObject(-1);
+        }
 
         // TODO remove
         lua_State* get() { return mState; }

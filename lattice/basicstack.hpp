@@ -57,6 +57,7 @@ namespace lat
         bool isString(int index) const;
         bool isTable(int index) const;
         bool isFunction(int index) const;
+        bool isCoroutine(int index) const;
 
         ObjectView getObject(int index);
         std::optional<ObjectView> tryGetObject(int index);

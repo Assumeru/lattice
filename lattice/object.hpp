@@ -41,6 +41,7 @@ namespace lat
         bool isString() const;
         bool isTable() const;
         bool isFunction() const;
+        bool isCoroutine() const;
         LuaType getType() const;
 
         Nil asNil() const;

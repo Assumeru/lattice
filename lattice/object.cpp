@@ -40,6 +40,11 @@ namespace lat
         return mStack.isFunction(mIndex);
     }
 
+    bool ObjectView::isCoroutine() const
+    {
+        return mStack.isCoroutine(mIndex);
+    }
+
     LuaType ObjectView::getType() const
     {
         return mStack.api().getType(mIndex);
@@ -132,6 +137,8 @@ namespace lat
             return stream << "<function>";
         else if (value.isTable())
             return stream << "<table>";
+        else if (value.isCoroutine())
+            return stream << "<coroutine>";
         return stream << "invalid object view";
     }
 }

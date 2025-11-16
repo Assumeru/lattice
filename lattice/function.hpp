@@ -9,7 +9,7 @@
 
 namespace lat
 {
-    template <class...>
+    template <class>
     class ReturningFunctionView;
 
     class FunctionView
@@ -96,7 +96,7 @@ namespace lat
         }
 
         template <class... Ret>
-        ReturningFunctionView<Ret...> returning();
+        auto returning();
 
         operator ObjectView() noexcept { return ObjectView(mStack, mIndex); }
     };
@@ -105,21 +105,29 @@ namespace lat
     template <class... Types>
     constexpr bool FunctionView::allSpecialized<std::tuple<Types...>> = (true && ... && detail::pullsOneValue<Types>);
 
-    template <class... Ret>
+    template <class Ret>
     class ReturningFunctionView
     {
         FunctionView mFunction;
 
     public:
+        using type = Ret;
+
         ReturningFunctionView(FunctionView function)
             : mFunction(function)
         {
         }
 
+        template <class AltRet, class... Args>
+        auto invoke(Args&&... args)
+        {
+            return mFunction.invoke<AltRet>(std::forward<Args>(args)...);
+        }
+
         template <class... Args>
         auto operator()(Args&&... args)
         {
-            return invoke<Ret...>(std::forward<Args>(args)...);
+            return mFunction.invoke<Ret>(std::forward<Args>(args)...);
         }
 
         operator FunctionView() noexcept { return mFunction; }
@@ -127,9 +135,13 @@ namespace lat
     };
 
     template <class... Ret>
-    ReturningFunctionView<Ret...> FunctionView::returning()
+    auto FunctionView::returning()
     {
-        return ReturningFunctionView<Ret...>(*this);
+        constexpr std::size_t count = sizeof...(Ret);
+        if constexpr (count == 1)
+            return ReturningFunctionView<Ret...>(*this);
+        else
+            return ReturningFunctionView<std::tuple<Ret...>>(*this);
     }
 
     inline FunctionView pullValue(BasicStack& stack, int& pos, Type<FunctionView>)
@@ -151,6 +163,27 @@ namespace lat
     {
         template <>
         constexpr inline bool pullsOneValue<FunctionView> = true;
+
+        template <class T, class U = std::remove_reference_t<T>>
+        concept ReturningFunction = std::is_same_v<U, ReturningFunctionView<typename U::type>>;
+    }
+
+    template <detail::ReturningFunction T>
+    inline T pullValue(BasicStack& stack, int& pos, Type<T>)
+    {
+        return stack.getObject(pos++).asFunction().returning<typename T::type>();
+    }
+
+    template <detail::ReturningFunction T>
+    inline bool isValue(const BasicStack& stack, int& pos, Type<T>)
+    {
+        return stack.isFunction(pos++);
+    }
+
+    template <detail::ReturningFunction T>
+    inline T getValue(ObjectView view, Type<T>)
+    {
+        return view.asFunction().returning<typename T::type>();
     }
 }
 

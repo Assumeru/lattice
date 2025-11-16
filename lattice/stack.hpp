@@ -24,7 +24,7 @@ namespace lat
         TableView pushArray(int size) { return pushTable(0, size); }
 
         template <class... Ret>
-        ReturningFunctionView<Ret...> pushFunctionReturning(std::string_view lua, const char* name = nullptr)
+        auto pushFunctionReturning(std::string_view lua, const char* name = nullptr)
         {
             return pushFunction(lua, name).returning<Ret...>();
         }

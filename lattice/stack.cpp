@@ -204,6 +204,11 @@ namespace lat
         return api().isFunction(index);
     }
 
+    bool BasicStack::isCoroutine(int index) const
+    {
+        return api().isThread(index);
+    }
+
     ObjectView BasicStack::getObject(int index)
     {
         return tryGetObject(index).value();

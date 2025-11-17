@@ -29,6 +29,13 @@ namespace lat
             return pushFunction(lua, name).returning<Ret...>();
         }
 
+        template <class... Ret>
+        auto execute(std::string_view lua, const char* name = nullptr)
+        {
+            auto loaded = pushFunctionReturning<Ret...>(lua, name);
+            return loaded.mFunction.invokeImpl<false, decltype(loaded)::type>();
+        }
+
         template <class T>
         ObjectView push(T&& value)
         {

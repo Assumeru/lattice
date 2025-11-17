@@ -9,6 +9,7 @@
 #include <optional>
 #include <string_view>
 #include <type_traits>
+#include <vector>
 
 namespace lat
 {
@@ -137,10 +138,23 @@ namespace lat
             return stack.getObject(pos++);
         }
 
+        inline std::vector<ObjectView> pullValue(BasicStack& stack, int& pos, Type<std::vector<ObjectView>>)
+        {
+            const int top = stack.getTop();
+            if (pos > top)
+                return {};
+            std::vector<ObjectView> values;
+            values.reserve(static_cast<std::size_t>(top - pos + 1));
+            while (pos <= top)
+                values.emplace_back(stack.getObject(pos++));
+            return values;
+        }
+
         template <class T>
         concept PushSpecialized = requires(BasicStack& stack, T&& value) { pushValue(stack, std::forward<T>(value)); };
         template <class T>
-        concept PreConvPushSpecialized = requires(BasicStack& stack, T&& value) { pushPreConvValue(stack, std::forward<T>(value)); };
+        concept PreConvPushSpecialized
+            = requires(BasicStack& stack, T&& value) { pushPreConvValue(stack, std::forward<T>(value)); };
 
         template <class T>
         concept GetFromViewSpecialized = requires(ObjectView view, Type<T> type) {
@@ -161,6 +175,9 @@ namespace lat
         constexpr inline bool pullsOneValue = GetFromViewSpecialized<T>;
         template <>
         constexpr inline bool pullsOneValue<ObjectView> = true;
+
+        template <class T>
+        concept SingleStackPull = pullsOneValue<T>;
 
         template <class Value, bool light = false, class T = std::remove_cvref_t<Value>,
             class V = std::remove_volatile_t<Value>>

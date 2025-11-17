@@ -28,6 +28,7 @@ namespace lat
 
         friend class BasicStack;
         friend class ObjectView;
+        friend class Stack;
 
         template <class>
         constexpr static bool allSpecialized = false;
@@ -35,14 +36,14 @@ namespace lat
         template <class... Types>
         std::tuple<Types...> pullTuple(Type<std::tuple<Types...>>, int pos)
         {
-            auto values = std::make_tuple<Types...>(detail::pullFromStack<Types>(mStack, pos)...);
+            // Use braced initializer list to force left-to-right evaluation
+            auto values = std::tuple<Types...>{ detail::pullFromStack<Types>(mStack, pos)... };
             cleanUp(pos);
             return values;
         }
 
-    public:
-        template <class Ret, class... Args>
-        Ret invoke(Args&&... args)
+        template <bool copy, class Ret, class... Args>
+        Ret invokeImpl(Args&&... args)
         {
             const int top = mStack.getTop();
             constexpr int resCount = [] {
@@ -66,7 +67,8 @@ namespace lat
             }();
             try
             {
-                ObjectView(*this).pushTo(mStack);
+                if constexpr (copy)
+                    ObjectView(*this).pushTo(mStack);
                 int pos = mStack.getTop();
                 (detail::pushToStack(mStack, std::forward<Args>(args)), ...);
                 call(pos, resCount);
@@ -89,6 +91,13 @@ namespace lat
             }
         }
 
+    public:
+        template <class Ret, class... Args>
+        Ret invoke(Args&&... args)
+        {
+            return invokeImpl<true, Ret>(std::forward<Args>(args)...);
+        }
+
         template <class... Args>
         void operator()(Args&&... args)
         {
@@ -109,6 +118,8 @@ namespace lat
     class ReturningFunctionView
     {
         FunctionView mFunction;
+
+        friend class Stack;
 
     public:
         using type = Ret;
@@ -138,7 +149,9 @@ namespace lat
     auto FunctionView::returning()
     {
         constexpr std::size_t count = sizeof...(Ret);
-        if constexpr (count == 1)
+        if constexpr (count == 0)
+            return ReturningFunctionView<void>(*this);
+        else if constexpr (count == 1)
             return ReturningFunctionView<Ret...>(*this);
         else
             return ReturningFunctionView<std::tuple<Ret...>>(*this);

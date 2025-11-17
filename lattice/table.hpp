@@ -38,7 +38,7 @@ namespace lat
             checkSingleValue(prev);
         }
 
-        template <class Value, class... Path>
+        template <detail::SingleStackPull Value, class... Path>
         Value getImpl(Path&&... path)
         {
             const int top = mStack.getTop();
@@ -102,7 +102,7 @@ namespace lat
     public:
         operator ObjectView() noexcept { return ObjectView(mStack, mIndex); }
 
-        template <class Value = ObjectView, class Key, class... Path>
+        template <detail::SingleStackPull Value = ObjectView, class Key, class... Path>
         Value get(Key&& key, Path&&... args)
         {
             return getImpl<Value>(std::forward<Key>(key), std::forward<Path>(args)...);
@@ -156,14 +156,14 @@ namespace lat
             return IndexedTableView<decltype(path)>(mTable, std::move(path));
         }
 
-        template <class T = ObjectView>
+        template <detail::SingleStackPull T = ObjectView>
         auto get()
         {
             return std::apply(
                 [&](auto&&... path) { return mTable.get<T>(std::forward<decltype(path)>(path)...); }, mPath);
         }
 
-        template <class T>
+        template <detail::SingleStackPull T>
         operator T()
         {
             return get<T>();

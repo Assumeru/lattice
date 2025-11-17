@@ -119,6 +119,12 @@ namespace lat
         return ObjectView(stack, stack.getTop());
     }
 
+    bool ObjectView::setEnvironment(TableView& environment)
+    {
+        ObjectView(environment).pushTo(mStack);
+        return mStack.api().setEnvTable(mIndex);
+    }
+
     std::ostream& operator<<(std::ostream& stream, ObjectView value)
     {
         if (value.isNil())

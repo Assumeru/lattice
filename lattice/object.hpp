@@ -54,6 +54,8 @@ namespace lat
 
         ObjectView pushTo(BasicStack&);
 
+        bool setEnvironment(TableView& environment);
+
         template <class T>
         bool is() const;
 

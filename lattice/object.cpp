@@ -108,7 +108,15 @@ namespace lat
 
     ObjectView ObjectView::pushTo(BasicStack& stack)
     {
-        const bool sameStack = stack == mStack;
+        const bool sameStack = [&] {
+            if (stack.mState == mStack.mState)
+            {
+                if (&stack == &mStack)
+                    return true;
+                throw std::runtime_error("both stacks must be active");
+            }
+            return false;
+        }();
         LuaApi api = mStack.api();
         mStack.ensure(1);
         if (!sameStack)

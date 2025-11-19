@@ -146,7 +146,11 @@ namespace lat
                 throw std::out_of_range("invalid index");
         }
         else if (index < 0)
-            return getTop() + index + 1;
+        {
+            index = getTop() + index + 1;
+            if (index <= 0)
+                throw std::out_of_range("invalid index");
+        }
         return index;
     }
 

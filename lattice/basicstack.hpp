@@ -37,8 +37,6 @@ namespace lat
         friend class TableView;
 
     public:
-        bool operator==(const BasicStack& other) const { return mState == other.mState; }
-
         TableView globals();
 
         void ensure(std::uint16_t extra);

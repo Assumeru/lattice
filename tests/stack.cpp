@@ -1,4 +1,5 @@
 #include <lua/api.hpp>
+#include <reference.hpp>
 #include <stack.hpp>
 #include <state.hpp>
 
@@ -101,6 +102,66 @@ namespace
             ObjectView object = stack1.pushBoolean(true);
             mState.withStack([&](Stack& stack2) { EXPECT_ANY_THROW(object.pushTo(stack2)); });
             EXPECT_EQ(stack1.getTop(), 1);
+        });
+    }
+
+    TEST_F(StackTest, can_use_references_across_stacks)
+    {
+        mState.withStack([&](Stack& stack1) {
+            TableReference ref1 = stack1.pushTable().store();
+            Reference ref2 = stack1.pushBoolean(true).store();
+            stack1.pop(2);
+            mState.withStack([&](Stack& stack2) {
+                TableView referenced = ref1.pushTo(stack2);
+                referenced[1] = 2;
+                ref2 = stack2.pushInteger(3);
+            });
+            int value1 = ref1.pushTo(stack1)[1];
+            EXPECT_EQ(value1, 2);
+            int value2 = ref2.pushTo(stack1).as<int>();
+            EXPECT_EQ(value2, 3);
+        });
+    }
+
+    TEST_F(StackTest, references_unregister_themselves)
+    {
+        mState.withStack([&](Stack& stack) {
+            TableView registry = stack.getObject(LUA_REGISTRYINDEX).asTable();
+            const std::size_t size = registry.size();
+            std::optional<TableReference> ref;
+            {
+                TableView object = stack.pushTable();
+                ref.emplace(object.store());
+                stack.pop();
+            }
+            {
+                TableView object = ref->pushTo(stack);
+                EXPECT_EQ(object.size(), 0);
+                stack.pop();
+            }
+            EXPECT_EQ(size + 1, registry.size());
+            ref.reset();
+            EXPECT_EQ(size, registry.size());
+        });
+    }
+
+    TEST_F(StackTest, cannot_push_reference_after_reset)
+    {
+        mState.withStack([&](Stack& stack) {
+            {
+                TableView object = stack.pushTable();
+                TableReference ref = object.store();
+                stack.pop();
+                ref.reset();
+                EXPECT_ANY_THROW(ref.pushTo(stack));
+            }
+            {
+                ObjectView object = stack.pushNil();
+                Reference ref = object.store();
+                stack.pop();
+                ref.reset();
+                EXPECT_ANY_THROW(ref.pushTo(stack));
+            }
         });
     }
 }

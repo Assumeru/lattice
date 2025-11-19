@@ -1,6 +1,7 @@
 #include "function.hpp"
 
 #include "lua/api.hpp"
+#include "reference.hpp"
 
 #include <stdexcept>
 
@@ -21,5 +22,10 @@ namespace lat
         if (resCount < 0)
             resCount = LUA_MULTRET;
         mStack.protectedCall(argCount, resCount);
+    }
+
+    FunctionReference FunctionView::store()
+    {
+        return FunctionReference(ObjectView(*this).store());
     }
 }

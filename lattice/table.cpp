@@ -1,6 +1,7 @@
 #include "table.hpp"
 
 #include "lua/api.hpp"
+#include "reference.hpp"
 
 #include <format>
 
@@ -34,6 +35,19 @@ namespace lat
         }
     }
 
+    ObjectView TableView::getRaw(int index)
+    {
+        mStack.ensure(1);
+        mStack.api().pushRawTableValue(mIndex, index);
+        return mStack.getObject(-1);
+    }
+
+    void TableView::setRaw(int index, ObjectView& value)
+    {
+        value.pushTo(mStack);
+        mStack.api().setRawTableValue(mIndex, index);
+    }
+
     void TableView::cleanUp(int prev)
     {
         const int diff = mStack.getTop() - prev;
@@ -44,5 +58,10 @@ namespace lat
     std::size_t TableView::size() const
     {
         return mStack.api().getObjectSize(mIndex);
+    }
+
+    TableReference TableView::store()
+    {
+        return TableReference(ObjectView(*this).store());
     }
 }

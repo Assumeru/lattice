@@ -12,6 +12,8 @@ namespace lat
     template <class>
     class ReturningFunctionView;
 
+    class FunctionReference;
+
     class FunctionView
     {
         BasicStack& mStack;
@@ -108,6 +110,8 @@ namespace lat
         auto returning();
 
         operator ObjectView() noexcept { return ObjectView(mStack, mIndex); }
+
+        FunctionReference store();
     };
 
     // Workaround for GCC < 14 https://gcc.gnu.org/bugzilla/show_bug.cgi?id=71954

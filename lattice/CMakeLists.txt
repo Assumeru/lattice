@@ -7,6 +7,7 @@ target_sources(LibLattice
         function.cpp
         functionref.hpp
         object.cpp
+        reference.cpp
         stack.cpp
         state.cpp
         table.cpp
@@ -18,6 +19,7 @@ target_sources(LibLattice
             convert.hpp
             function.hpp
             object.hpp
+            reference.hpp
             stack.hpp
             state.hpp
             table.hpp

@@ -14,6 +14,7 @@ namespace lat
     class FunctionView;
     class LuaApi;
     class ObjectView;
+    class Reference;
     class TableView;
 
     // Non-owning lua_State wrapper
@@ -32,8 +33,11 @@ namespace lat
         void protectedCall(int (*)(lua_State*), void*);
         void protectedCall(int, int);
 
+        Reference store(int);
+
         friend class FunctionView;
         friend class ObjectView;
+        friend class State;
         friend class TableView;
 
     public:

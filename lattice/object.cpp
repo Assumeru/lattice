@@ -3,6 +3,7 @@
 #include "basicstack.hpp"
 #include "function.hpp"
 #include "lua/api.hpp"
+#include "reference.hpp"
 #include "table.hpp"
 
 #include <ostream>
@@ -131,6 +132,11 @@ namespace lat
     {
         ObjectView(environment).pushTo(mStack);
         return mStack.api().setEnvTable(mIndex);
+    }
+
+    Reference ObjectView::store()
+    {
+        return mStack.store(mIndex);
     }
 
     std::ostream& operator<<(std::ostream& stream, ObjectView value)

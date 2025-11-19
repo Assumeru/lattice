@@ -42,12 +42,18 @@ namespace lat
 
     namespace
     {
-        void callDebugHook(lua_State* state, lua_Debug* activationRecord)
+        MainStack* getMainStack(LuaApi& api)
         {
-            LuaApi api(*state);
             api.pushGlobal(MainStack::globalName);
             auto main = static_cast<MainStack*>(api.asUserData(-1));
             api.pop(1);
+            return main;
+        }
+
+        void callDebugHook(lua_State* state, lua_Debug* activationRecord)
+        {
+            LuaApi api(*state);
+            MainStack* main = getMainStack(api);
             if (main == nullptr)
             {
                 api.pushString("invalid state");
@@ -81,6 +87,14 @@ namespace lat
     }
 
     State::~State() = default;
+
+    Stack& State::getMain(BasicStack& stack)
+    {
+        stack.ensure(1);
+        LuaApi api = stack.api();
+        MainStack* main = getMainStack(api);
+        return main->mStack;
+    }
 
     void State::withStack(FunctionRef<void(Stack&)> function) const
     {

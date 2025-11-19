@@ -20,6 +20,7 @@ namespace lat
 
     class BasicStack;
     class FunctionView;
+    class Reference;
     class TableView;
     enum class LuaType : int;
 
@@ -27,6 +28,8 @@ namespace lat
     {
         BasicStack& mStack;
         int mIndex;
+
+        friend class Reference;
 
     public:
         ObjectView(BasicStack& stack, int index)
@@ -55,6 +58,8 @@ namespace lat
         ObjectView pushTo(BasicStack&);
 
         bool setEnvironment(TableView& environment);
+
+        Reference store();
 
         template <class T>
         bool is() const;

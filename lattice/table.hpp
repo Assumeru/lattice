@@ -14,6 +14,8 @@ namespace lat
     template <class Path>
     class IndexedTableView;
 
+    class TableReference;
+
     class TableView
     {
         BasicStack& mStack;
@@ -102,6 +104,8 @@ namespace lat
     public:
         operator ObjectView() noexcept { return ObjectView(mStack, mIndex); }
 
+        TableReference store();
+
         template <detail::SingleStackPull Value = ObjectView, class Key, class... Path>
         Value get(Key&& key, Path&&... args)
         {
@@ -116,6 +120,9 @@ namespace lat
 
         template <class Key>
         auto operator[](Key&& key);
+
+        ObjectView getRaw(int);
+        void setRaw(int, ObjectView&);
 
         std::size_t size() const;
     };

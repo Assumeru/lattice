@@ -9,6 +9,8 @@
 #include "function.hpp"
 #include "lua/api.hpp"
 #include "object.hpp"
+#include "reference.hpp"
+#include "state.hpp"
 
 namespace
 {
@@ -121,6 +123,16 @@ namespace lat
                 api.error();
             },
             &function);
+    }
+
+    Reference BasicStack::store(int index)
+    {
+        Stack& main = State::getMain(*this);
+        LuaApi lua = api();
+        ::ensure(lua, 1);
+        lua.pushCopy(index);
+        int ref = lua.createReferenceIn(LUA_REGISTRYINDEX);
+        return Reference(*main.mState, ref);
     }
 
     TableView BasicStack::globals()

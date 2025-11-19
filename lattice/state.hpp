@@ -39,6 +39,10 @@ namespace lat
     {
         std::unique_ptr<MainStack> mState;
 
+        friend class BasicStack;
+
+        static Stack& getMain(BasicStack&);
+
     public:
         State();
         State(Allocator<void>, void*);

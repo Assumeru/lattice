@@ -60,8 +60,76 @@ namespace lat
         return mStack.api().getObjectSize(mIndex);
     }
 
+    std::optional<std::pair<ObjectView, ObjectView>> TableView::next(ObjectView& key)
+    {
+        mStack.ensure(2);
+        key.pushTo(mStack);
+        if (!mStack.api().next(mIndex))
+            return {};
+        return std::make_pair(mStack.getObject(-2), mStack.getObject(-1));
+    }
+
     TableReference TableView::store()
     {
         return TableReference(ObjectView(*this).store());
+    }
+
+    TableViewIterator TableView::begin()
+    {
+        ObjectView key = mStack.pushNil();
+        if (auto result = next(key))
+        {
+            Reference keyRef = result->first.store();
+            Reference valueRef = result->second.store();
+            mStack.pop(3);
+            return TableViewIterator(*this, std::move(keyRef), std::move(valueRef));
+        }
+        mStack.pop();
+        return end();
+    }
+
+    TableViewIterator TableView::end()
+    {
+        return TableViewIterator(*this);
+    }
+
+    TableViewIterator::TableViewIterator(TableView table)
+        : mTable(table)
+    {
+    }
+
+    TableViewIterator::TableViewIterator(TableView table, Reference key, Reference value)
+        : mTable(table)
+        , mKey(std::move(key))
+        , mValue(std::move(value))
+    {
+    }
+
+    TableViewIterator& TableViewIterator::operator++()
+    {
+        ObjectView key = mKey.pushTo(mTable.mStack);
+        if (auto result = mTable.next(key))
+        {
+            mKey = result->first;
+            mValue = result->second;
+            mTable.mStack.pop(3);
+        }
+        else
+        {
+            mKey.reset();
+            mValue.reset();
+            mTable.mStack.pop();
+        }
+        return *this;
+    }
+
+    std::pair<const Reference&, const Reference&> TableViewIterator::operator*() const
+    {
+        return { mKey, mValue };
+    }
+
+    bool TableViewIterator::operator==(const TableViewIterator& other) const
+    {
+        return mKey == other.mKey && mValue == other.mValue;
     }
 }

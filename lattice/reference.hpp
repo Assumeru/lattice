@@ -5,9 +5,10 @@ struct lua_State;
 
 namespace lat
 {
+    class BasicStack;
     class FunctionView;
     class ObjectView;
-    class Stack;
+    struct Nil;
     class TableView;
 
     class FunctionReference;
@@ -21,6 +22,9 @@ namespace lat
         Reference(const Reference&) = delete;
 
     public:
+        Reference();
+        explicit Reference(const Nil&);
+
         Reference(lua_State& state, int ref)
             : mState(&state)
             , mRef(ref)
@@ -40,11 +44,14 @@ namespace lat
         ~Reference();
 
         void reset();
+        bool isValid() const;
 
-        ObjectView pushTo(Stack&) const;
+        ObjectView pushTo(BasicStack&) const;
 
         void operator=(ObjectView&);
         ObjectView operator=(ObjectView&&);
+
+        friend bool operator==(const Reference&, const Reference&);
     };
 
     class FunctionReference
@@ -58,11 +65,16 @@ namespace lat
 
     public:
         void reset();
+        bool isValid() const;
 
-        FunctionView pushTo(Stack&) const;
+        FunctionView pushTo(BasicStack&) const;
 
         void operator=(FunctionView&);
         FunctionView operator=(FunctionView&&);
+
+        friend bool operator==(const Reference&, const FunctionReference&);
+        friend bool operator==(const FunctionReference&, const FunctionReference&);
+        friend bool operator==(const TableReference&, const FunctionReference&);
     };
 
     class TableReference
@@ -76,11 +88,16 @@ namespace lat
 
     public:
         void reset();
+        bool isValid() const;
 
-        TableView pushTo(Stack&) const;
+        TableView pushTo(BasicStack&) const;
 
         void operator=(TableView&);
         TableView operator=(TableView&&);
+
+        friend bool operator==(const Reference&, const TableReference&);
+        friend bool operator==(const TableReference&, const TableReference&);
+        friend bool operator==(const TableReference&, const FunctionReference&);
     };
 }
 

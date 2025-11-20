@@ -7,6 +7,18 @@
 
 namespace lat
 {
+    Reference::Reference()
+        : mState(nullptr)
+        , mRef(LUA_NOREF)
+    {
+    }
+
+    Reference::Reference(const Nil&)
+        : mState(nullptr)
+        , mRef(LUA_REFNIL)
+    {
+    }
+
     Reference::Reference(Reference&& other)
     {
         mState = other.mState;
@@ -38,7 +50,12 @@ namespace lat
         mRef = LUA_NOREF;
     }
 
-    ObjectView Reference::pushTo(Stack& stack) const
+    bool Reference::isValid() const
+    {
+        return mRef != LUA_NOREF;
+    }
+
+    ObjectView Reference::pushTo(BasicStack& stack) const
     {
         if (mRef == LUA_NOREF)
             throw std::runtime_error("invalid reference");
@@ -100,7 +117,12 @@ namespace lat
         mReference.reset();
     }
 
-    FunctionView FunctionReference::pushTo(Stack& stack) const
+    bool FunctionReference::isValid() const
+    {
+        return mReference.isValid();
+    }
+
+    FunctionView FunctionReference::pushTo(BasicStack& stack) const
     {
         return mReference.pushTo(stack).asFunction();
     }
@@ -127,7 +149,12 @@ namespace lat
         mReference.reset();
     }
 
-    TableView TableReference::pushTo(Stack& stack) const
+    bool TableReference::isValid() const
+    {
+        return mReference.isValid();
+    }
+
+    TableView TableReference::pushTo(BasicStack& stack) const
     {
         return mReference.pushTo(stack).asTable();
     }
@@ -148,5 +175,39 @@ namespace lat
     {
         std::swap(l.mState, r.mState);
         std::swap(l.mRef, r.mRef);
+    }
+
+    bool operator==(const Reference& l, const Reference& r)
+    {
+        if (!l.isValid())
+            return !r.isValid();
+        if (l.mRef != r.mRef)
+            return false;
+        return l.mRef == LUA_REFNIL || l.mState == r.mState;
+    }
+
+    bool operator==(const Reference& l, const FunctionReference& r)
+    {
+        return l == r.mReference;
+    }
+
+    bool operator==(const FunctionReference& l, const FunctionReference& r)
+    {
+        return l.mReference == r.mReference;
+    }
+
+    bool operator==(const TableReference& l, const FunctionReference& r)
+    {
+        return l.mReference == r.mReference;
+    }
+
+    bool operator==(const Reference& l, const TableReference& r)
+    {
+        return l == r.mReference;
+    }
+
+    bool operator==(const TableReference& l, const TableReference& r)
+    {
+        return l.mReference == r.mReference;
     }
 }

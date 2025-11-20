@@ -4,8 +4,10 @@
 #include "basicstack.hpp"
 #include "convert.hpp"
 #include "object.hpp"
+#include "reference.hpp"
 
 #include <cstddef>
+#include <optional>
 #include <stdexcept>
 #include <utility>
 
@@ -13,8 +15,6 @@ namespace lat
 {
     template <class Path>
     class IndexedTableView;
-
-    class TableReference;
 
     class TableView
     {
@@ -100,6 +100,7 @@ namespace lat
         friend class IndexedTableView;
         friend class BasicStack;
         friend class ObjectView;
+        friend class TableViewIterator;
 
     public:
         operator ObjectView() noexcept { return ObjectView(mStack, mIndex); }
@@ -125,6 +126,10 @@ namespace lat
         void setRaw(int, ObjectView&);
 
         std::size_t size() const;
+
+        std::optional<std::pair<ObjectView, ObjectView>> next(ObjectView&);
+        TableViewIterator begin();
+        TableViewIterator end();
     };
 
     namespace detail
@@ -224,6 +229,25 @@ namespace lat
         template <>
         constexpr inline bool pullsOneValue<TableView> = true;
     }
+
+    class TableViewIterator
+    {
+        TableView mTable;
+        Reference mKey;
+        Reference mValue;
+
+        TableViewIterator(TableView);
+        TableViewIterator(TableView, Reference, Reference);
+
+        friend class TableView;
+
+    public:
+        TableViewIterator& operator++();
+
+        std::pair<const Reference&, const Reference&> operator*() const;
+
+        bool operator==(const TableViewIterator&) const;
+    };
 }
 
 #endif

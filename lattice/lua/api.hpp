@@ -117,7 +117,7 @@ namespace lat
 
         lua_State* createThread() { return lua_newthread(mState); }
 
-        int next(int index) { return lua_next(mState, index); }
+        bool next(int index) { return lua_next(mState, index); }
 
         size_t getObjectSize(int index) const noexcept { return lua_objlen(mState, index); }
 

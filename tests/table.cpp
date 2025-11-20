@@ -73,4 +73,41 @@ namespace
             EXPECT_EQ(top, stack.getTop());
         });
     }
+
+    TEST_F(TableTest, can_iterate_table)
+    {
+        mState.withStack([](Stack& stack) {
+            TableView table = stack.pushTable();
+            table[1] = 2;
+            table["a"] = 3;
+            table[3] = 4;
+            EXPECT_EQ(stack.getTop(), 1);
+            int count = 0;
+            for (const auto& [key, value] : table)
+            {
+                ObjectView keyView = key.pushTo(stack);
+                ObjectView valueView = value.pushTo(stack);
+                int v = valueView.as<int>();
+                if (auto k = keyView.as<std::optional<int>>())
+                {
+                    if (*k == 1)
+                        EXPECT_EQ(v, 2);
+                    else
+                    {
+                        EXPECT_EQ(v, 4);
+                        EXPECT_EQ(k, 3);
+                    }
+                }
+                else
+                {
+                    EXPECT_EQ(keyView.asString(), "a");
+                    EXPECT_EQ(v, 3);
+                }
+                stack.pop(2);
+                ++count;
+            }
+            EXPECT_EQ(count, 3);
+            EXPECT_EQ(stack.getTop(), 1);
+        });
+    }
 }

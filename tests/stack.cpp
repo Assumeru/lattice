@@ -164,4 +164,29 @@ namespace
             }
         });
     }
+
+    TEST_F(StackTest, can_get_stack_from_reference)
+    {
+        TableReference tableRef;
+        EXPECT_ANY_THROW(tableRef.onStack([](Stack&, TableView) {}));
+        FunctionReference functionRef;
+        mState.withStack([&](Stack& stack) {
+            TableView table = stack.pushTable();
+            table[1] = 2;
+            tableRef = table.store();
+            functionRef = stack.execute<FunctionView>("return function(a) return a end");
+        });
+        int count = 0;
+        tableRef.onStack([&](Stack&, TableView table) {
+            ++count;
+            int value = table[1];
+            EXPECT_EQ(value, 2);
+        });
+        functionRef.onStack([&](Stack&, FunctionView function) {
+            ++count;
+            int value = function.invoke<int>(3);
+            EXPECT_EQ(value, 3);
+        });
+        EXPECT_EQ(count, 2);
+    }
 }

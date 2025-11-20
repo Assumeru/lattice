@@ -11,6 +11,7 @@ namespace lat
     // Non-owning lua_State wrapper
     class Stack : public BasicStack
     {
+        friend class Reference;
         friend class State;
         friend struct MainStack;
 

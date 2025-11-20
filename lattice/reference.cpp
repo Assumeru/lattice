@@ -13,12 +13,6 @@ namespace lat
     {
     }
 
-    Reference::Reference(const Nil&)
-        : mState(nullptr)
-        , mRef(LUA_REFNIL)
-    {
-    }
-
     Reference::Reference(Reference&& other)
     {
         mState = other.mState;
@@ -65,9 +59,19 @@ namespace lat
         return registry.getRaw(mRef);
     }
 
+    void Reference::onStack(FunctionRef<void(Stack&, ObjectView)> function)
+    {
+        if (mRef == LUA_NOREF || !mState)
+            throw std::runtime_error("invalid reference");
+        Stack(mState).call([&](Stack& stack) {
+            ObjectView view = pushTo(stack);
+            function(stack, view);
+        });
+    }
+
     void Reference::operator=(ObjectView& object)
     {
-        if (mRef == LUA_NOREF)
+        if (!mState)
         {
             *this = object.store();
         }
@@ -75,6 +79,10 @@ namespace lat
         {
             reset();
             mRef = LUA_REFNIL;
+        }
+        else if (mRef == LUA_NOREF || mRef == LUA_REFNIL)
+        {
+            *this = object.store();
         }
         else
         {
@@ -127,6 +135,11 @@ namespace lat
         return mReference.pushTo(stack).asFunction();
     }
 
+    void FunctionReference::onStack(FunctionRef<void(Stack&, FunctionView)> function)
+    {
+        mReference.onStack([&](Stack& stack, ObjectView view) { function(stack, view.asFunction()); });
+    }
+
     void FunctionReference::operator=(FunctionView& object)
     {
         mReference = ObjectView(object);
@@ -157,6 +170,11 @@ namespace lat
     TableView TableReference::pushTo(BasicStack& stack) const
     {
         return mReference.pushTo(stack).asTable();
+    }
+
+    void TableReference::onStack(FunctionRef<void(Stack&, TableView)> function)
+    {
+        mReference.onStack([&](Stack& stack, ObjectView view) { function(stack, view.asTable()); });
     }
 
     void TableReference::operator=(TableView& object)

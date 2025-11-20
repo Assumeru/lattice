@@ -1,6 +1,8 @@
 #ifndef LATTICE_REFERENCE_H
 #define LATTICE_REFERENCE_H
 
+#include "functionref.hpp"
+
 struct lua_State;
 
 namespace lat
@@ -8,7 +10,7 @@ namespace lat
     class BasicStack;
     class FunctionView;
     class ObjectView;
-    struct Nil;
+    class Stack;
     class TableView;
 
     class FunctionReference;
@@ -23,7 +25,6 @@ namespace lat
 
     public:
         Reference();
-        explicit Reference(const Nil&);
 
         Reference(lua_State& state, int ref)
             : mState(&state)
@@ -47,6 +48,7 @@ namespace lat
         bool isValid() const;
 
         ObjectView pushTo(BasicStack&) const;
+        void onStack(FunctionRef<void(Stack&, ObjectView)>);
 
         void operator=(ObjectView&);
         ObjectView operator=(ObjectView&&);
@@ -64,10 +66,13 @@ namespace lat
         friend class FunctionView;
 
     public:
+        FunctionReference() = default;
+
         void reset();
         bool isValid() const;
 
         FunctionView pushTo(BasicStack&) const;
+        void onStack(FunctionRef<void(Stack&, FunctionView)>);
 
         void operator=(FunctionView&);
         FunctionView operator=(FunctionView&&);
@@ -87,10 +92,13 @@ namespace lat
         friend class TableView;
 
     public:
+        TableReference() = default;
+
         void reset();
         bool isValid() const;
 
         TableView pushTo(BasicStack&) const;
+        void onStack(FunctionRef<void(Stack&, TableView)>);
 
         void operator=(TableView&);
         TableView operator=(TableView&&);

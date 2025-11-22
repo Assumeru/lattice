@@ -46,6 +46,16 @@ namespace lat
         return mStack.isCoroutine(mIndex);
     }
 
+    bool ObjectView::isUserData() const
+    {
+        return mStack.isUserData(mIndex);
+    }
+
+    bool ObjectView::isLightUserData() const
+    {
+        return mStack.isLightUserData(mIndex);
+    }
+
     LuaType ObjectView::getType() const
     {
         return mStack.api().getType(mIndex);
@@ -107,6 +117,25 @@ namespace lat
         return FunctionView(mStack, mIndex);
     }
 
+    std::span<std::byte> ObjectView::asUserData() const
+    {
+        LuaApi api = mStack.api();
+        void* data = api.asUserData(mIndex);
+        if (data == nullptr)
+            throw std::runtime_error("value is not user data");
+        std::size_t size = api.getObjectSize(mIndex);
+        if (size == 0)
+            throw std::runtime_error("value is light user data");
+        return { reinterpret_cast<std::byte*>(data), size };
+    }
+
+    void* ObjectView::asLightUserData() const
+    {
+        if (!isLightUserData())
+            throw std::runtime_error("value is not light user data");
+        return mStack.api().asUserData(mIndex);
+    }
+
     ObjectView ObjectView::pushTo(BasicStack& stack)
     {
         const bool sameStack = [&] {
@@ -159,6 +188,8 @@ namespace lat
             return stream << "<table>";
         else if (value.isCoroutine())
             return stream << "<coroutine>";
+        else if (value.isUserData())
+            return stream << "<userdata>";
         return stream << "invalid object view";
     }
 }

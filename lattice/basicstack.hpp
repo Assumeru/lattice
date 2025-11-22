@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <optional>
+#include <span>
 #include <string_view>
 
 struct lua_State;
@@ -60,6 +61,8 @@ namespace lat
         bool isTable(int index) const;
         bool isFunction(int index) const;
         bool isCoroutine(int index) const;
+        bool isUserData(int index) const;
+        bool isLightUserData(int index) const;
 
         ObjectView getObject(int index);
         std::optional<ObjectView> tryGetObject(int index);
@@ -71,6 +74,8 @@ namespace lat
         ObjectView pushString(std::string_view);
         TableView pushTable(int objectSize = 0, int arraySize = 0);
         FunctionView pushFunction(std::string_view lua, const char* name = nullptr);
+        ObjectView pushLightUserData(void*);
+        std::span<std::byte> pushUserData(std::size_t);
     };
 }
 

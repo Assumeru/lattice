@@ -19,13 +19,30 @@ namespace
             state.withStack([](lat::Stack& stack) {
                 std::cout << "start\n";
                 lat::LuaApi api(*stack.get());
-                api.pushFunction([](lua_State* state) -> int {
-                    std::cout << "stack size inside: " << lua_gettop(state) << "\n";
-                    return 0;
-                });
-                lat::FunctionView function = stack.getObject(-1).asFunction();
-                std::cout << "stack size outside: " << api.getStackSize() << "\n";
-                function("a", 1, 2);
+                int a = 123;
+                stack.pushLightUserData(&api);
+                const int apiPtr = stack.makeAbsolute(-1);
+                stack.pushLightUserData(&a);
+                const int intPtr = stack.makeAbsolute(-1);
+                std::cout << "light size: " << api.getObjectSize(apiPtr) << '\n';
+                if (api.pushMetatable(apiPtr))
+                    std::cout << "unexpected metatable 1\n";
+                if (api.pushMetatable(intPtr))
+                    std::cout << "unexpected metatable 2\n";
+                stack.pushTable();
+                api.setMetatable(intPtr);
+                if (!api.pushMetatable(intPtr))
+                    throw std::runtime_error("failed to set metatable");
+                if (!api.pushMetatable(apiPtr))
+                    api.pushNil();
+                std::cout << "equal metatables == " << api.equal(-1, -2) << "\n";
+                stack.pop(2);
+                stack.pushTable();
+                if (!api.setEnvTable(intPtr))
+                    std::cout << "failed to set env table 1\n";
+                api.pushEnvTable(intPtr);
+                api.pushEnvTable(apiPtr);
+                std::cout << "equal envs == " << api.equal(-1, -2) << "\n";
             });
         }
         catch (const std::exception& e)

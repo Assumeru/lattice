@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <iosfwd>
+#include <span>
 #include <string_view>
 
 namespace lat
@@ -45,6 +46,8 @@ namespace lat
         bool isTable() const;
         bool isFunction() const;
         bool isCoroutine() const;
+        bool isUserData() const;
+        bool isLightUserData() const;
         LuaType getType() const;
 
         Nil asNil() const;
@@ -54,6 +57,8 @@ namespace lat
         std::string_view asString() const;
         TableView asTable() const;
         FunctionView asFunction() const;
+        std::span<std::byte> asUserData() const;
+        void* asLightUserData() const;
 
         ObjectView pushTo(BasicStack&);
 

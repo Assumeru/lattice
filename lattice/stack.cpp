@@ -225,6 +225,16 @@ namespace lat
         return api().isThread(index);
     }
 
+    bool BasicStack::isUserData(int index) const
+    {
+        return api().isUserData(index);
+    }
+
+    bool BasicStack::isLightUserData(int index) const
+    {
+        return api().isLightUserData(index);
+    }
+
     ObjectView BasicStack::getObject(int index)
     {
         return tryGetObject(index).value();
@@ -287,5 +297,20 @@ namespace lat
             default:
                 throw std::logic_error("invalid state");
         }
+    }
+
+    ObjectView BasicStack::pushLightUserData(void* value)
+    {
+        return ObjectView(*this, push(api(), &LuaApi::pushLightUserData, value));
+    }
+
+    std::span<std::byte> BasicStack::pushUserData(std::size_t size)
+    {
+        if (size == 0)
+            throw std::invalid_argument("size must be > 0");
+        LuaApi lua = api();
+        ::ensure(lua, 1);
+        void* data = lua.createUserData(size);
+        return { reinterpret_cast<std::byte*>(data), size };
     }
 }

@@ -17,6 +17,15 @@ namespace
         int mValue;
     };
 
+    constexpr std::size_t pointerSize = sizeof(void*);
+
+    void* extractPointer(std::span<std::byte> data)
+    {
+        void* pointer = nullptr;
+        std::memcpy(&pointer, data.data(), pointerSize);
+        return pointer;
+    }
+
     TEST_F(UserDataTest, can_push_pointer_as_userdata)
     {
         mState.withStack([](Stack& stack) {
@@ -25,7 +34,7 @@ namespace
             ObjectView view = stack.push(pointer);
             EXPECT_TRUE(view.isUserData());
             std::span<std::byte> data = view.asUserData();
-            EXPECT_EQ(sizeof(TestData*), data.size());
+            EXPECT_EQ(pointerSize, data.size());
             EXPECT_EQ(std::memcmp(data.data(), &pointer, data.size()), 0);
         });
     }
@@ -37,9 +46,8 @@ namespace
             ObjectView view = stack.push(value);
             EXPECT_TRUE(view.isUserData());
             std::span<std::byte> data = view.asUserData();
-            EXPECT_LT(sizeof(TestData*), data.size());
-            void* pointer = nullptr;
-            std::memcpy(&pointer, data.data(), sizeof(void*));
+            EXPECT_LT(pointerSize, data.size());
+            void* pointer = extractPointer(data);
             EXPECT_NE(pointer, nullptr);
             EXPECT_EQ(static_cast<TestData*>(pointer)->mValue, value.mValue);
         });
@@ -49,7 +57,7 @@ namespace
     {
         bool* mDestroyed;
 
-        DestructorTestData(bool& destroyed)
+        explicit DestructorTestData(bool& destroyed)
             : mDestroyed(&destroyed)
         {
         }
@@ -76,10 +84,38 @@ namespace
             bool destroyed = false;
             DestructorTestData value(destroyed);
             stack.push(value);
+            EXPECT_FALSE(destroyed);
             stack.pop();
             EXPECT_EQ(stack.getTop(), 0);
             stack.collectGarbage();
             EXPECT_TRUE(destroyed);
+        });
+    }
+
+    struct MoveOnlyTestData
+    {
+        int mValue;
+
+        explicit MoveOnlyTestData(int value)
+            : mValue(value)
+        {
+        }
+
+        MoveOnlyTestData(const MoveOnlyTestData&) = delete;
+
+        MoveOnlyTestData(MoveOnlyTestData&& value)
+            : mValue(value.mValue + 1)
+        {
+        }
+    };
+
+    TEST_F(UserDataTest, move_only_types_can_be_userdata)
+    {
+        mState.withStack([](Stack& stack) {
+            ObjectView view = stack.push(MoveOnlyTestData(1));
+            std::span<std::byte> data = view.asUserData();
+            void* pointer = extractPointer(data);
+            EXPECT_GE(static_cast<MoveOnlyTestData*>(pointer)->mValue, 1);
         });
     }
 }

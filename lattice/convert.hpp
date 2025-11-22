@@ -245,6 +245,8 @@ namespace lat
                 using RefT = typename V::type;
                 pushToStack<RefT&, true>(stack, value.get());
             }
+            else if constexpr (std::is_array_v<T>)
+                static_assert(false, "array types are not supported");
             else if constexpr (std::is_pointer_v<T>)
             {
                 if (value == nullptr)
@@ -290,7 +292,7 @@ namespace lat
                     std::span<std::byte> data = pushType(stack, pointerSize + dataSize, nullptr);
                     void* pointer = data.data() + pointerSize;
                     std::size_t size = dataSize;
-                    pointer = std::align(alignof(T), dataSize, pointer, size);
+                    pointer = std::align(alignof(T), sizeof(T), pointer, size);
                     try
                     {
                         if (pointer == nullptr)

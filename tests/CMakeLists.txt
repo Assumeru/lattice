@@ -23,4 +23,5 @@ target_sources(LatticeTests
         memory.cpp
         stack.cpp
         table.cpp
+        userdata.cpp
 )

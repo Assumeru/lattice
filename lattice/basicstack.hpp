@@ -17,7 +17,10 @@ namespace lat
     class LuaApi;
     class ObjectView;
     class Reference;
+    class Stack;
     class TableView;
+
+    using UserDataDestructor = void (*)(Stack&, ObjectView);
 
     // Non-owning lua_State wrapper
     class BasicStack
@@ -78,7 +81,7 @@ namespace lat
         ObjectView pushLightUserData(void*);
         std::span<std::byte> pushUserData(std::size_t);
 
-        TableView pushMetatable(const std::type_index&, void(void*));
+        TableView pushMetatable(const std::type_index&, UserDataDestructor);
     };
 }
 

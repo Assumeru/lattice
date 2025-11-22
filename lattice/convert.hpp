@@ -180,10 +180,26 @@ namespace lat
         template <class T>
         concept SingleStackPull = pullsOneValue<T>;
 
+        constexpr std::size_t pointerSize = sizeof(void*);
+
         template <class T>
-        void destroyUserData(void* userdata)
+        void destroyUserData(Stack&, ObjectView view)
         {
-            std::destroy_at(static_cast<T*>(userdata));
+            std::span<std::byte> data = view.asUserData();
+            if (data.size() < pointerSize)
+                throw std::invalid_argument("invalid user data");
+            else if (data.size() == pointerSize)
+            {
+                // "light" user data; pointer only
+                return;
+            }
+            void* pointer = nullptr;
+            std::memcpy(&pointer, data.data(), pointerSize);
+            if (pointer == nullptr)
+                return; // nothing to destroy
+            std::destroy_at(static_cast<T*>(pointer));
+            pointer = nullptr;
+            std::memcpy(data.data(), &pointer, pointerSize);
         }
 
         template <class Value, bool light = false, class T = std::remove_cvref_t<Value>,
@@ -235,7 +251,7 @@ namespace lat
                     stack.pushNil();
                 else
                 {
-                    using RefT = std::add_lvalue_reference_t<std::remove_pointer_t<V>>;
+                    using RefT = std::add_lvalue_reference_t<std::remove_pointer_t<std::remove_reference_t<T>>>;
                     pushToStack<RefT, true>(stack, std::forward<RefT>(*value));
                 }
             }
@@ -253,15 +269,14 @@ namespace lat
             }
             else
             {
-                constexpr auto pushType = [](BasicStack& stack, std::size_t size, void* pointer) {
+                constexpr auto pushType = [](BasicStack& stack, std::size_t size, const void* pointer) {
                     TableView metatable = stack.pushMetatable(std::type_index(typeid(T)), &destroyUserData<T>);
                     std::span<std::byte> data = stack.pushUserData(size);
-                    std::memcpy(data.data(), &pointer, sizeof(void*));
+                    std::memcpy(data.data(), &pointer, pointerSize);
                     stack.getObject(-1).setMetatable(metatable);
                     stack.remove(-2);
                     return data;
                 };
-                constexpr std::size_t pointerSize = sizeof(void*);
                 if constexpr (light)
                 {
                     // Light user data cannot have a unique metatable so we push a full user data the size of a pointer

@@ -15,10 +15,11 @@ namespace lat
     template <class UserData>
     using Allocator = void* (*)(UserData*, void*, std::size_t, std::size_t);
 
-    class TableReference;
-    class Stack;
-    struct MainStack;
     enum class LuaHookMask : int;
+    class ObjectView;
+    struct MainStack;
+    class Stack;
+    class TableReference;
 
     enum class Library
     {
@@ -44,7 +45,7 @@ namespace lat
         friend class BasicStack;
 
         static Stack& getMain(BasicStack&);
-        static const TableReference& getMetatable(BasicStack&, const std::type_index&, void(void*));
+        static const TableReference& getMetatable(BasicStack&, const std::type_index&, void(Stack&, ObjectView));
 
     public:
         State();

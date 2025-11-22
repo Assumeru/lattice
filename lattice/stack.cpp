@@ -314,7 +314,7 @@ namespace lat
         return { reinterpret_cast<std::byte*>(data), size };
     }
 
-    TableView BasicStack::pushMetatable(const std::type_index& type, void(destructor)(void*))
+    TableView BasicStack::pushMetatable(const std::type_index& type, UserDataDestructor destructor)
     {
         const TableReference& metatable = State::getMetatable(*this, type, destructor);
         return metatable.pushTo(*this);

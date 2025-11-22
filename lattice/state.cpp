@@ -82,48 +82,21 @@ namespace lat
             api.error();
         }
 
-        using Destructor = void (*)(void*);
-
         int defaultDestructor(lua_State* state)
         {
             LuaApi api(*state);
-            void* data = api.asUserData(-1);
-            if (data == nullptr)
-            {
-                api.pushString("missing userdata parameter");
-                api.error();
-            }
-            constexpr std::size_t pointerSize = sizeof(void*);
-            std::size_t size = api.getObjectSize(-1);
-            if (size < pointerSize)
-            {
-                api.pushString("invalid userdata");
-                api.error();
-            }
-            else if (size == pointerSize)
-            {
-                // "light" userdata; pointer only
-                return 0;
-            }
-            void* pointer = nullptr;
-            std::memcpy(&pointer, data, pointerSize);
-            if (pointer == nullptr)
-            {
-                // nothing to destroy
-                return 0;
-            }
             api.pushUpValue(1);
-            Destructor destructor = static_cast<Destructor>(api.asUserData(-1));
+            UserDataDestructor destructor = static_cast<UserDataDestructor>(api.asUserData(-1));
             if (destructor == nullptr)
             {
                 api.pushString("missing destructor");
                 api.error();
             }
+            api.pop(1);
             try
             {
-                destructor(pointer);
-                pointer = nullptr;
-                std::memcpy(data, &pointer, pointerSize);
+                Stack stack(state);
+                destructor(stack, stack.getObject(-1));
                 return 0;
             }
             catch (const std::exception& e)
@@ -158,7 +131,8 @@ namespace lat
         return main->mStack;
     }
 
-    const TableReference& State::getMetatable(BasicStack& stack, const std::type_index& type, Destructor destructor)
+    const TableReference& State::getMetatable(
+        BasicStack& stack, const std::type_index& type, UserDataDestructor destructor)
     {
         stack.ensure(1);
         LuaApi api = stack.api();
@@ -172,6 +146,7 @@ namespace lat
             api.pushFunction(&defaultDestructor, 1);
             table[meta::gc] = stack.getObject(-1);
             found = main->mMetatables.emplace(type, table.store()).first;
+            stack.pop(2);
         }
         return found->second;
     }

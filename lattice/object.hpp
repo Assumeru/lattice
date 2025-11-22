@@ -63,6 +63,7 @@ namespace lat
         ObjectView pushTo(BasicStack&);
 
         bool setEnvironment(TableView& environment);
+        void setMetatable(TableView& metatable);
 
         Reference store();
 

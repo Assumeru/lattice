@@ -4,9 +4,11 @@
 
 #include <optional>
 #include <type_traits>
+#include <unordered_map>
 #include <utility>
 
 #include "lua/api.hpp"
+#include "reference.hpp"
 #include "stack.hpp"
 
 namespace lat
@@ -19,6 +21,7 @@ namespace lat
 
         Stack mStack;
         std::optional<FunctionRef<void(Stack&, lua_Debug&)>> mDebugHook;
+        std::unordered_map<std::type_index, TableReference> mMetatables;
 
         MainStack(lua_State* state)
             : mStack(state)
@@ -37,7 +40,11 @@ namespace lat
                 (*mDebugHook)(mStack, *activationRecord);
         }
 
-        ~MainStack() { lua_close(mStack.mState); }
+        ~MainStack()
+        {
+            mMetatables.clear();
+            lua_close(mStack.mState);
+        }
     };
 
     namespace
@@ -74,6 +81,61 @@ namespace lat
             }
             api.error();
         }
+
+        using Destructor = void (*)(void*);
+
+        int defaultDestructor(lua_State* state)
+        {
+            LuaApi api(*state);
+            void* data = api.asUserData(-1);
+            if (data == nullptr)
+            {
+                api.pushString("missing userdata parameter");
+                api.error();
+            }
+            constexpr std::size_t pointerSize = sizeof(void*);
+            std::size_t size = api.getObjectSize(-1);
+            if (size < pointerSize)
+            {
+                api.pushString("invalid userdata");
+                api.error();
+            }
+            else if (size == pointerSize)
+            {
+                // "light" userdata; pointer only
+                return 0;
+            }
+            void* pointer = nullptr;
+            std::memcpy(&pointer, data, pointerSize);
+            if (pointer == nullptr)
+            {
+                // nothing to destroy
+                return 0;
+            }
+            api.pushUpValue(1);
+            Destructor destructor = static_cast<Destructor>(api.asUserData(-1));
+            if (destructor == nullptr)
+            {
+                api.pushString("missing destructor");
+                api.error();
+            }
+            try
+            {
+                destructor(pointer);
+                pointer = nullptr;
+                std::memcpy(data, &pointer, pointerSize);
+                return 0;
+            }
+            catch (const std::exception& e)
+            {
+                api.pushString(e.what());
+            }
+            catch (...)
+            {
+                api.pushString("error in destructor");
+            }
+            api.error();
+        }
     }
 
     State::State()
@@ -94,6 +156,24 @@ namespace lat
         LuaApi api = stack.api();
         MainStack* main = getMainStack(api);
         return main->mStack;
+    }
+
+    const TableReference& State::getMetatable(BasicStack& stack, const std::type_index& type, Destructor destructor)
+    {
+        stack.ensure(1);
+        LuaApi api = stack.api();
+        MainStack* main = getMainStack(api);
+        auto found = main->mMetatables.find(type);
+        if (found == main->mMetatables.end())
+        {
+            TableView table = stack.pushTable();
+            stack.ensure(1);
+            api.pushLightUserData(destructor);
+            api.pushFunction(&defaultDestructor, 1);
+            table[meta::gc] = stack.getObject(-1);
+            found = main->mMetatables.emplace(type, table.store()).first;
+        }
+        return found->second;
     }
 
     void State::withStack(FunctionRef<void(Stack&)> function) const

@@ -185,6 +185,8 @@ namespace lat
     void BasicStack::remove(int index)
     {
         LuaApi lua = api();
+        if (index < 0)
+            index = makeAbsolute(index);
         if (index <= 0 || index > lua.getStackSize())
             throw std::out_of_range("invalid index");
         lua.remove(index);
@@ -306,11 +308,15 @@ namespace lat
 
     std::span<std::byte> BasicStack::pushUserData(std::size_t size)
     {
-        if (size == 0)
-            throw std::invalid_argument("size must be > 0");
         LuaApi lua = api();
         ::ensure(lua, 1);
         void* data = lua.createUserData(size);
         return { reinterpret_cast<std::byte*>(data), size };
+    }
+
+    TableView BasicStack::pushMetatable(const std::type_index& type, void(destructor)(void*))
+    {
+        const TableReference& metatable = State::getMetatable(*this, type, destructor);
+        return metatable.pushTo(*this);
     }
 }

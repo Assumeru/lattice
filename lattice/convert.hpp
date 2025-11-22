@@ -7,6 +7,7 @@
 #include <concepts>
 #include <cstddef>
 #include <optional>
+#include <stdexcept>
 #include <string_view>
 #include <type_traits>
 #include <vector>
@@ -179,6 +180,12 @@ namespace lat
         template <class T>
         concept SingleStackPull = pullsOneValue<T>;
 
+        template <class T>
+        void destroyUserData(void* userdata)
+        {
+            std::destroy_at(static_cast<T*>(userdata));
+        }
+
         template <class Value, bool light = false, class T = std::remove_cvref_t<Value>,
             class V = std::remove_volatile_t<Value>>
         inline void pushToStack(BasicStack& stack, Value&& value)
@@ -220,7 +227,7 @@ namespace lat
             else if constexpr (isReferenceWrapper<T>)
             {
                 using RefT = typename V::type;
-                pushToStack<RefT&, true>(value.get());
+                pushToStack<RefT&, true>(stack, value.get());
             }
             else if constexpr (std::is_pointer_v<T>)
             {
@@ -229,7 +236,7 @@ namespace lat
                 else
                 {
                     using RefT = std::add_lvalue_reference_t<std::remove_pointer_t<V>>;
-                    pushToStack<RefT, true>(std::forward<RefT>(*value));
+                    pushToStack<RefT, true>(stack, std::forward<RefT>(*value));
                 }
             }
             else if constexpr (std::is_same_v<T, ObjectView>)
@@ -244,15 +251,44 @@ namespace lat
                     static_assert(false, "cannot push const object");
                 ObjectView(value).pushTo(stack);
             }
-            else if constexpr (light)
-            {
-                // TODO push light user data
-                static_assert(false, "light user data not implemented");
-            }
             else
             {
-                // TODO push user data
-                static_assert(false, "user data not implemented");
+                constexpr auto pushType = [](BasicStack& stack, std::size_t size, void* pointer) {
+                    TableView metatable = stack.pushMetatable(std::type_index(typeid(T)), &destroyUserData<T>);
+                    std::span<std::byte> data = stack.pushUserData(size);
+                    std::memcpy(data.data(), &pointer, sizeof(void*));
+                    stack.getObject(-1).setMetatable(metatable);
+                    stack.remove(-2);
+                    return data;
+                };
+                constexpr std::size_t pointerSize = sizeof(void*);
+                if constexpr (light)
+                {
+                    // Light user data cannot have a unique metatable so we push a full user data the size of a pointer
+                    pushType(stack, pointerSize, std::addressof(value));
+                }
+                else
+                {
+                    // object + padding to ensure alignment
+                    constexpr std::size_t dataSize = sizeof(T) + alignof(T) - 1;
+                    // Push a user type with the correct metatable. We init to nullptr because construction might throw
+                    std::span<std::byte> data = pushType(stack, pointerSize + dataSize, nullptr);
+                    void* pointer = data.data() + pointerSize;
+                    std::size_t size = dataSize;
+                    pointer = std::align(alignof(T), dataSize, pointer, size);
+                    try
+                    {
+                        if (pointer == nullptr)
+                            throw std::runtime_error(std::string("failed to align object of type ") + typeid(T).name());
+                        pointer = new (pointer) T(std::forward<Value>(value));
+                        std::memcpy(data.data(), &pointer, sizeof(void*));
+                    }
+                    catch (...)
+                    {
+                        stack.pop();
+                        throw;
+                    }
+                }
             }
         }
 

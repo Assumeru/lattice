@@ -121,11 +121,9 @@ namespace lat
     {
         LuaApi api = mStack.api();
         void* data = api.asUserData(mIndex);
-        if (data == nullptr)
+        if (data == nullptr && !api.isUserData(mIndex))
             throw std::runtime_error("value is not user data");
         std::size_t size = api.getObjectSize(mIndex);
-        if (size == 0)
-            throw std::runtime_error("value is light user data");
         return { reinterpret_cast<std::byte*>(data), size };
     }
 
@@ -161,6 +159,12 @@ namespace lat
     {
         ObjectView(environment).pushTo(mStack);
         return mStack.api().setEnvTable(mIndex);
+    }
+
+    void ObjectView::setMetatable(TableView& metatable)
+    {
+        ObjectView(metatable).pushTo(mStack);
+        mStack.api().setMetatable(mIndex);
     }
 
     Reference ObjectView::store()

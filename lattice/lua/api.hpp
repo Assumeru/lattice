@@ -239,6 +239,8 @@ namespace lat
 
         // const char* setupvalue(int funcindex, int n) const noexcept { return lua_setupvalue(mState, funcindex, n); }
 
+        void pushUpValue(int index) const noexcept { pushCopy(lua_upvalueindex(index)); }
+
         [[noreturn]] void raiseArgumentError(int argPos, const char* extramsg)
         {
             luaL_argerror(mState, argPos, extramsg);

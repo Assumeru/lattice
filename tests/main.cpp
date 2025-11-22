@@ -11,6 +11,7 @@
 
 namespace
 {
+    struct Struct{};
     void test()
     {
         lat::State state;
@@ -43,6 +44,9 @@ namespace
                 api.pushEnvTable(intPtr);
                 api.pushEnvTable(apiPtr);
                 std::cout << "equal envs == " << api.equal(-1, -2) << "\n";
+                Struct s;
+                stack.push(&s);
+                stack.push(s);
             });
         }
         catch (const std::exception& e)

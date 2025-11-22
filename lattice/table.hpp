@@ -9,10 +9,38 @@
 #include <cstddef>
 #include <optional>
 #include <stdexcept>
+#include <string_view>
 #include <utility>
 
 namespace lat
 {
+    namespace meta
+    {
+        constexpr inline std::string_view add = "__add";
+        constexpr inline std::string_view sub = "__sub";
+        constexpr inline std::string_view mul = "__mul";
+        constexpr inline std::string_view div = "__div";
+        constexpr inline std::string_view mod = "__mod";
+        constexpr inline std::string_view pow = "__pow";
+        // unary minus
+        constexpr inline std::string_view unm = "__unm";
+        constexpr inline std::string_view concat = "__concat";
+        constexpr inline std::string_view len = "__len";
+        constexpr inline std::string_view eq = "__eq";
+        constexpr inline std::string_view lt = "__lt";
+        constexpr inline std::string_view le = "__le";
+        constexpr inline std::string_view index = "__index";
+        constexpr inline std::string_view newIndex = "__newindex";
+        constexpr inline std::string_view call = "__call";
+        // finalizer
+        constexpr inline std::string_view gc = "__gc";
+        // weak references; weak keys if the value contains k, weak values if the value contains v
+        constexpr inline std::string_view mode = "__mode";
+        // getmetatable blocker
+        constexpr inline std::string_view metatable = "__metatable";
+        constexpr inline std::string_view toString = "__tostring";
+    }
+
     template <class Path>
     class IndexedTableView;
 

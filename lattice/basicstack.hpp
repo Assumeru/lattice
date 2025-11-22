@@ -7,6 +7,7 @@
 #include <optional>
 #include <span>
 #include <string_view>
+#include <typeindex>
 
 struct lua_State;
 
@@ -76,6 +77,8 @@ namespace lat
         FunctionView pushFunction(std::string_view lua, const char* name = nullptr);
         ObjectView pushLightUserData(void*);
         std::span<std::byte> pushUserData(std::size_t);
+
+        TableView pushMetatable(const std::type_index&, void(void*));
     };
 }
 

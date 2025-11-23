@@ -272,7 +272,7 @@ namespace lat
             }
             else
             {
-                static_assert(false, "TODO");
+                return State::getUserTypeRegistry(stack).matches<Value>(stack, pos++);
             }
         }
 

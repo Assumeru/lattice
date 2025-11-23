@@ -47,6 +47,8 @@ namespace lat
         void pushUserData(BasicStack&, std::size_t, std::size_t, const std::type_info&, UserDataDestructor,
             FunctionRef<void*(void*)>);
 
+        bool matches(const BasicStack&, int, std::type_index) const;
+
     public:
         template <class Value, class T = std::remove_cvref_t<Value>>
         void pushPointer(BasicStack& stack, Value&& value)
@@ -60,6 +62,12 @@ namespace lat
         {
             pushUserData(stack, sizeof(T), alignof(T), typeid(T), &destroyUserData<T>,
                 [&](void* pointer) { return new (pointer) T(std::forward<Value>(value)); });
+        }
+
+        template <class Value, class T = std::remove_cvref_t<Value>>
+        bool matches(const BasicStack& stack, int index) const
+        {
+            return matches(stack, index, std::type_index(typeid(T)));
         }
     };
 }

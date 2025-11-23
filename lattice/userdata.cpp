@@ -119,4 +119,22 @@ namespace lat
         }
         return found->second;
     }
+
+    bool UserTypeRegistry::matches(const BasicStack& stack, int index, std::type_index type) const
+    {
+        if (!stack.isUserData(index) || stack.isLightUserData(index))
+            return false;
+        auto found = mMetatables.find(type);
+        if (found == mMetatables.end())
+            return false;
+        BasicStack& mutStack = const_cast<BasicStack&>(stack);
+        mutStack.ensure(2);
+        LuaApi api = stack.api();
+        if (!api.pushMetatable(index))
+            return false;
+        found->second.pushTo(mutStack);
+        bool same = api.rawEqual(-1, -2);
+        api.pop(2);
+        return same;
+    }
 }

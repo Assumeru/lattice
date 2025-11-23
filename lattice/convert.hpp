@@ -343,7 +343,7 @@ namespace lat
             if constexpr (std::is_pointer_v<T>)
                 return static_cast<Value>(value);
             else
-                return *value;
+                return std::forward<Value>(*value);
         }
     }
 }

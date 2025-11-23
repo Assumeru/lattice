@@ -21,13 +21,6 @@ namespace
 
     constexpr std::size_t pointerSize = sizeof(void*);
 
-    void* extractPointer(std::span<std::byte> data)
-    {
-        void* pointer = nullptr;
-        std::memcpy(&pointer, data.data(), pointerSize);
-        return pointer;
-    }
-
     TEST_F(UserDataTest, can_push_pointer_as_userdata)
     {
         mState.withStack([](Stack& stack) {
@@ -49,9 +42,7 @@ namespace
             EXPECT_TRUE(view.isUserData());
             std::span<std::byte> data = view.asUserData();
             EXPECT_LT(pointerSize, data.size());
-            void* pointer = extractPointer(data);
-            EXPECT_NE(pointer, nullptr);
-            EXPECT_EQ(static_cast<TestData*>(pointer)->mValue, value.mValue);
+            EXPECT_EQ(view.as<const TestData*>()->mValue, value.mValue);
         });
     }
 
@@ -126,6 +117,7 @@ namespace
     struct MoveOnlyTestData
     {
         int mValue;
+        bool mMoved = false;
 
         explicit MoveOnlyTestData(int value)
             : mValue(value)
@@ -137,6 +129,7 @@ namespace
         MoveOnlyTestData(MoveOnlyTestData&& value)
             : mValue(value.mValue + 1)
         {
+            value.mMoved = true;
         }
     };
 
@@ -144,9 +137,13 @@ namespace
     {
         mState.withStack([](Stack& stack) {
             ObjectView view = stack.push(MoveOnlyTestData(1));
-            std::span<std::byte> data = view.asUserData();
-            void* pointer = extractPointer(data);
-            EXPECT_GE(static_cast<MoveOnlyTestData*>(pointer)->mValue, 1);
+            const MoveOnlyTestData* pointer = view.as<const MoveOnlyTestData*>();
+            EXPECT_EQ(pointer->mValue, 2);
+            EXPECT_FALSE(pointer->mMoved);
+            MoveOnlyTestData data = view.as<MoveOnlyTestData>();
+            EXPECT_EQ(data.mValue, 3);
+            EXPECT_FALSE(data.mMoved);
+            EXPECT_TRUE(pointer->mMoved);
         });
     }
 }

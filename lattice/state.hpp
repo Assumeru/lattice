@@ -15,6 +15,7 @@ namespace lat
     using Allocator = void* (*)(UserData*, void*, std::size_t, std::size_t);
 
     enum class LuaHookMask : int;
+    class BasicStack;
     struct MainStack;
     class Stack;
     class UserTypeRegistry;

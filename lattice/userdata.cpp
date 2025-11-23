@@ -6,6 +6,7 @@
 #include "state.hpp"
 #include "table.hpp"
 
+#include <cstring>
 #include <stdexcept>
 
 namespace lat
@@ -16,7 +17,7 @@ namespace lat
         {
             LuaApi api(*state);
             api.pushUpValue(1);
-            UserDataDestructor destructor = static_cast<UserDataDestructor>(api.asUserData(-1));
+            UserDataDestructor destructor = reinterpret_cast<UserDataDestructor>(api.asUserData(-1));
             if (destructor == nullptr)
             {
                 api.pushString("missing destructor");
@@ -110,7 +111,7 @@ namespace lat
         if (found == mMetatables.end())
         {
             TableView table = stack.pushTable();
-            stack.pushLightUserData(destructor);
+            stack.pushLightUserData(reinterpret_cast<void*>(destructor));
             stack.api().pushFunction(&defaultDestructor, 1);
             table[meta::gc] = stack.getObject(-1);
             found = mMetatables.emplace(type, table.store()).first;

@@ -43,6 +43,7 @@ namespace lat
 
     template <class Path>
     class IndexedTableView;
+    class TableViewIterator;
 
     class TableView
     {

@@ -3,6 +3,8 @@
 
 #include <gtest/gtest.h>
 
+#include <cstring>
+
 namespace
 {
     using namespace lat;

@@ -34,7 +34,8 @@ namespace lat
         auto execute(std::string_view lua, const char* name = nullptr)
         {
             auto loaded = pushFunctionReturning<Ret...>(lua, name);
-            return loaded.mFunction.invokeImpl<false, decltype(loaded)::type>();
+            using R = decltype(loaded)::type;
+            return loaded.mFunction.template invokeImpl<false, R>();
         }
 
         template <class T>

@@ -4,11 +4,9 @@
 
 #include <optional>
 #include <type_traits>
-#include <unordered_map>
 #include <utility>
 
 #include "lua/api.hpp"
-#include "reference.hpp"
 #include "stack.hpp"
 #include "userdata.hpp"
 
@@ -81,36 +79,6 @@ namespace lat
             {
                 api.setStackSize(0);
                 api.pushString("unknown error");
-            }
-            api.error();
-        }
-
-        int defaultDestructor(lua_State* state)
-        {
-            LuaApi api(*state);
-            api.pushUpValue(1);
-            UserDataDestructor destructor = static_cast<UserDataDestructor>(api.asUserData(-1));
-            if (destructor == nullptr)
-            {
-                api.pushString("missing destructor");
-                api.error();
-            }
-            api.pop(1);
-            try
-            {
-                Stack stack(state);
-                destructor(stack, stack.getObject(-1));
-                return 0;
-            }
-            catch (const std::exception& e)
-            {
-                api.setStackSize(0);
-                api.pushString(e.what());
-            }
-            catch (...)
-            {
-                api.setStackSize(0);
-                api.pushString("error in destructor");
             }
             api.error();
         }

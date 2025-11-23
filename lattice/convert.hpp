@@ -262,11 +262,7 @@ namespace lat
         template <class Value, class T = std::remove_cvref_t<Value>>
         inline bool stackValueIs(const BasicStack& stack, int& pos)
         {
-            if constexpr (std::is_reference_v<Value>)
-            {
-                static_assert(false, "a stack value is not a reference");
-            }
-            else if constexpr (IsSpecialized<T>)
+            if constexpr (IsSpecialized<T>)
             {
                 return isValue(stack, pos, Type<T>{});
             }
@@ -294,11 +290,7 @@ namespace lat
         template <class Value, class T = std::remove_cvref_t<Value>>
         inline Value pullFromStack(BasicStack& stack, int& pos)
         {
-            if constexpr (std::is_reference_v<Value>)
-            {
-                static_assert(false, "a stack value is not a reference");
-            }
-            else if constexpr (PullSpecialized<T>)
+            if constexpr (PullSpecialized<T>)
             {
                 return pullValue(stack, pos, Type<T>{});
             }
@@ -310,7 +302,9 @@ namespace lat
             }
             else
             {
-                static_assert(false, "TODO");
+                Value value = stack.getObject(pos).as<Value>();
+                stack.remove(pos);
+                return value;
             }
         }
     }
@@ -326,11 +320,7 @@ namespace lat
     Value ObjectView::as() const
     {
         using T = std::remove_cvref_t<Value>;
-        if constexpr (std::is_reference_v<Value>)
-        {
-            static_assert(false, "a stack value is not a reference");
-        }
-        else if constexpr (std::is_same_v<T, ObjectView>)
+        if constexpr (std::is_same_v<T, ObjectView>)
         {
             return *this;
         }
@@ -349,7 +339,11 @@ namespace lat
         }
         else
         {
-            static_assert(false, "TODO");
+            auto* value = State::getUserTypeRegistry(mStack).as<Value>(mStack, mIndex);
+            if constexpr (std::is_pointer_v<T>)
+                return static_cast<Value>(value);
+            else
+                return *value;
         }
     }
 }

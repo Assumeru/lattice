@@ -2,6 +2,7 @@
 
 #include "lua/api.hpp"
 #include "reference.hpp"
+#include "table.hpp"
 
 #include <stdexcept>
 
@@ -27,5 +28,20 @@ namespace lat
     FunctionReference FunctionView::store()
     {
         return FunctionReference(ObjectView(*this).store());
+    }
+
+    bool FunctionView::setEnvironment(TableView& environment)
+    {
+        return ObjectView(*this).setEnvironment(environment);
+    }
+
+    void FunctionView::setMetatable(TableView& metatable)
+    {
+        ObjectView(*this).setMetatable(metatable);
+    }
+
+    std::optional<ObjectView> FunctionView::pushMetatable()
+    {
+        return ObjectView(*this).pushMetatable();
     }
 }

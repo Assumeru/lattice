@@ -94,6 +94,35 @@ namespace
         });
     }
 
+    TEST_F(UserDataTest, can_get_userdata_value)
+    {
+        mState.withStack([](Stack& stack) {
+            TestData value{ 4 };
+            ObjectView view = stack.push(value);
+            {
+                TestData* pointer = view.as<TestData*>();
+                EXPECT_EQ(pointer->mValue++, value.mValue++);
+            }
+            {
+                const TestData* pointer = view.as<const TestData*>();
+                EXPECT_EQ(pointer->mValue, value.mValue);
+            }
+            {
+                TestData& ref = view.as<TestData&>();
+                EXPECT_EQ(ref.mValue++, value.mValue++);
+            }
+            {
+                const TestData& ref = view.as<const TestData&>();
+                EXPECT_EQ(ref.mValue, value.mValue);
+            }
+            EXPECT_ANY_THROW(view.as<const DestructorTestData*>());
+            {
+                TestData copy = view.as<TestData>();
+                EXPECT_EQ(copy.mValue, value.mValue);
+            }
+        });
+    }
+
     struct MoveOnlyTestData
     {
         int mValue;

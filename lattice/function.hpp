@@ -13,6 +13,7 @@ namespace lat
     class ReturningFunctionView;
 
     class FunctionReference;
+    class TableView;
 
     class FunctionView
     {
@@ -112,6 +113,10 @@ namespace lat
         operator ObjectView() noexcept { return ObjectView(mStack, mIndex); }
 
         FunctionReference store();
+
+        bool setEnvironment(TableView& environment);
+        void setMetatable(TableView& metatable);
+        std::optional<ObjectView> pushMetatable();
     };
 
     // Workaround for GCC < 14 https://gcc.gnu.org/bugzilla/show_bug.cgi?id=71954

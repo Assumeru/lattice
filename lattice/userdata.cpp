@@ -42,6 +42,11 @@ namespace lat
             }
             api.error();
         }
+
+        [[noreturn]] void typeError(const std::type_info& type)
+        {
+            throw std::runtime_error(std::string("value is not of type ") + type.name());
+        }
     }
 
     void UserTypeRegistry::clear()
@@ -124,7 +129,7 @@ namespace lat
     {
         if (!stack.isUserData(index) || stack.isLightUserData(index))
             return false;
-        auto found = mMetatables.find(type);
+        const auto found = mMetatables.find(type);
         if (found == mMetatables.end())
             return false;
         BasicStack& mutStack = const_cast<BasicStack&>(stack);
@@ -136,5 +141,31 @@ namespace lat
         bool same = api.rawEqual(-1, -2);
         api.pop(2);
         return same;
+    }
+
+    void* UserTypeRegistry::getUserData(BasicStack& stack, int index, const std::type_info& type) const
+    {
+        ObjectView view = stack.getObject(index);
+        if (!view.isUserData())
+            typeError(type);
+        const auto found = mMetatables.find(type);
+        if (found == mMetatables.end())
+            typeError(type);
+        std::optional<ObjectView> metatable = view.pushMetatable();
+        if (!metatable)
+            typeError(type);
+        found->second.pushTo(stack);
+        const bool same = stack.api().rawEqual(-1, -2);
+        stack.pop(2);
+        if (!same)
+            typeError(type);
+        std::span<std::byte> data = view.asUserData();
+        if (data.size() < pointerSize)
+            throw std::runtime_error("invalid object");
+        void* pointer = nullptr;
+        std::memcpy(&pointer, data.data(), pointerSize);
+        if (pointer == nullptr)
+            throw std::runtime_error("invalid object");
+        return pointer;
     }
 }

@@ -49,10 +49,13 @@ namespace lat
 
         bool matches(const BasicStack&, int, std::type_index) const;
 
+        void* getUserData(BasicStack&, int, const std::type_info&) const;
+
     public:
         template <class Value, class T = std::remove_cvref_t<Value>>
         void pushPointer(BasicStack& stack, Value&& value)
         {
+            static_assert(!std::is_pointer_v<T>);
             // Light user data cannot have a unique metatable so we push a full user data the size of a pointer
             pushUserData(stack, pointerSize, std::addressof(value), std::type_index(typeid(T)), &destroyUserData<T>);
         }
@@ -60,14 +63,22 @@ namespace lat
         template <class Value, class T = std::remove_cvref_t<Value>>
         void pushValue(BasicStack& stack, Value&& value)
         {
+            static_assert(!std::is_pointer_v<T>);
             pushUserData(stack, sizeof(T), alignof(T), typeid(T), &destroyUserData<T>,
                 [&](void* pointer) { return new (pointer) T(std::forward<Value>(value)); });
         }
 
-        template <class Value, class T = std::remove_cvref_t<Value>>
+        template <class Value, class T = std::remove_cvref_t<std::remove_pointer_t<Value>>>
         bool matches(const BasicStack& stack, int index) const
         {
             return matches(stack, index, std::type_index(typeid(T)));
+        }
+
+        template <class Value, class T = std::remove_cvref_t<std::remove_pointer_t<Value>>>
+        T* as(BasicStack& stack, int index) const
+        {
+            void* value = getUserData(stack, index, typeid(T));
+            return static_cast<T*>(value);
         }
     };
 }

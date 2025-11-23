@@ -74,6 +74,21 @@ namespace lat
         return TableReference(ObjectView(*this).store());
     }
 
+    bool TableView::setEnvironment(TableView& environment)
+    {
+        return ObjectView(*this).setEnvironment(environment);
+    }
+
+    void TableView::setMetatable(TableView& metatable)
+    {
+        ObjectView(*this).setMetatable(metatable);
+    }
+
+    std::optional<ObjectView> TableView::pushMetatable()
+    {
+        return ObjectView(*this).pushMetatable();
+    }
+
     TableViewIterator TableView::begin()
     {
         ObjectView key = mStack.pushNil();

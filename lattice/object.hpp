@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <iosfwd>
+#include <optional>
 #include <span>
 #include <string_view>
 
@@ -64,6 +65,7 @@ namespace lat
 
         bool setEnvironment(TableView& environment);
         void setMetatable(TableView& metatable);
+        std::optional<ObjectView> pushMetatable();
 
         Reference store();
 

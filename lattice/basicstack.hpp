@@ -7,7 +7,6 @@
 #include <optional>
 #include <span>
 #include <string_view>
-#include <typeindex>
 
 struct lua_State;
 
@@ -17,10 +16,7 @@ namespace lat
     class LuaApi;
     class ObjectView;
     class Reference;
-    class Stack;
     class TableView;
-
-    using UserDataDestructor = void (*)(Stack&, ObjectView);
 
     // Non-owning lua_State wrapper
     class BasicStack
@@ -44,6 +40,7 @@ namespace lat
         friend class ObjectView;
         friend class State;
         friend class TableView;
+        friend class UserTypeRegistry;
 
     public:
         TableView globals();
@@ -80,8 +77,6 @@ namespace lat
         FunctionView pushFunction(std::string_view lua, const char* name = nullptr);
         ObjectView pushLightUserData(void*);
         std::span<std::byte> pushUserData(std::size_t);
-
-        TableView pushMetatable(const std::type_index&, UserDataDestructor);
     };
 }
 

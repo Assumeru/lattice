@@ -114,10 +114,12 @@ namespace lat
                 }
                 catch (const std::exception& e)
                 {
+                    api.setStackSize(0);
                     api.pushCString(e.what());
                 }
                 catch (...)
                 {
+                    api.setStackSize(0);
                     api.pushString("unknown error");
                 }
                 api.error();
@@ -312,11 +314,5 @@ namespace lat
         ::ensure(lua, 1);
         void* data = lua.createUserData(size);
         return { reinterpret_cast<std::byte*>(data), size };
-    }
-
-    TableView BasicStack::pushMetatable(const std::type_index& type, UserDataDestructor destructor)
-    {
-        const TableReference& metatable = State::getMetatable(*this, type, destructor);
-        return metatable.pushTo(*this);
     }
 }

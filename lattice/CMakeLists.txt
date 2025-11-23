@@ -11,6 +11,7 @@ target_sources(LibLattice
         stack.cpp
         state.cpp
         table.cpp
+        userdata.cpp
         lua/api.cpp
     PUBLIC
         FILE_SET HEADERS
@@ -23,6 +24,7 @@ target_sources(LibLattice
             stack.hpp
             state.hpp
             table.hpp
+            userdata.hpp
             lua/api.hpp
             lua/enums.hpp
 )

@@ -6,7 +6,6 @@
 #include <cstddef>
 #include <memory>
 #include <span>
-#include <typeindex>
 
 struct lua_Debug;
 
@@ -16,10 +15,9 @@ namespace lat
     using Allocator = void* (*)(UserData*, void*, std::size_t, std::size_t);
 
     enum class LuaHookMask : int;
-    class ObjectView;
     struct MainStack;
     class Stack;
-    class TableReference;
+    class UserTypeRegistry;
 
     enum class Library
     {
@@ -45,7 +43,6 @@ namespace lat
         friend class BasicStack;
 
         static Stack& getMain(BasicStack&);
-        static const TableReference& getMetatable(BasicStack&, const std::type_index&, void(Stack&, ObjectView));
 
     public:
         State();
@@ -65,6 +62,8 @@ namespace lat
         void disableDebugHook() const;
 
         void loadLibraries(std::span<const Library> = {}) const;
+
+        static UserTypeRegistry& getUserTypeRegistry(BasicStack&);
     };
 }
 

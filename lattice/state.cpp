@@ -10,6 +10,7 @@
 #include "lua/api.hpp"
 #include "reference.hpp"
 #include "stack.hpp"
+#include "userdata.hpp"
 
 namespace lat
 {
@@ -21,7 +22,7 @@ namespace lat
 
         Stack mStack;
         std::optional<FunctionRef<void(Stack&, lua_Debug&)>> mDebugHook;
-        std::unordered_map<std::type_index, TableReference> mMetatables;
+        UserTypeRegistry mTypeRegistry;
 
         MainStack(lua_State* state)
             : mStack(state)
@@ -42,7 +43,7 @@ namespace lat
 
         ~MainStack()
         {
-            mMetatables.clear();
+            mTypeRegistry.clear();
             lua_close(mStack.mState);
         }
     };
@@ -73,10 +74,12 @@ namespace lat
             }
             catch (const std::exception& e)
             {
+                api.setStackSize(0);
                 api.pushCString(e.what());
             }
             catch (...)
             {
+                api.setStackSize(0);
                 api.pushString("unknown error");
             }
             api.error();
@@ -101,10 +104,12 @@ namespace lat
             }
             catch (const std::exception& e)
             {
+                api.setStackSize(0);
                 api.pushString(e.what());
             }
             catch (...)
             {
+                api.setStackSize(0);
                 api.pushString("error in destructor");
             }
             api.error();
@@ -131,24 +136,12 @@ namespace lat
         return main->mStack;
     }
 
-    const TableReference& State::getMetatable(
-        BasicStack& stack, const std::type_index& type, UserDataDestructor destructor)
+    UserTypeRegistry& State::getUserTypeRegistry(BasicStack& stack)
     {
         stack.ensure(1);
         LuaApi api = stack.api();
         MainStack* main = getMainStack(api);
-        auto found = main->mMetatables.find(type);
-        if (found == main->mMetatables.end())
-        {
-            TableView table = stack.pushTable();
-            stack.ensure(1);
-            api.pushLightUserData(destructor);
-            api.pushFunction(&defaultDestructor, 1);
-            table[meta::gc] = stack.getObject(-1);
-            found = main->mMetatables.emplace(type, table.store()).first;
-            stack.pop(2);
-        }
-        return found->second;
+        return main->mTypeRegistry;
     }
 
     void State::withStack(FunctionRef<void(Stack&)> function) const

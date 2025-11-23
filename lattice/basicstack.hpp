@@ -4,6 +4,7 @@
 #include "functionref.hpp"
 
 #include <cstdint>
+#include <functional>
 #include <optional>
 #include <span>
 #include <string_view>
@@ -16,6 +17,7 @@ namespace lat
     class LuaApi;
     class ObjectView;
     class Reference;
+    class Stack;
     class TableView;
 
     // Non-owning lua_State wrapper
@@ -36,6 +38,8 @@ namespace lat
 
         Reference store(int);
 
+        FunctionView pushFunction(std::function<int(Stack&)>);
+
         friend class FunctionView;
         friend class ObjectView;
         friend class State;
@@ -48,6 +52,7 @@ namespace lat
         void ensure(std::uint16_t extra);
 
         void collectGarbage();
+        bool collectGarbage(int size);
 
         int makeAbsolute(int index) const;
         int getTop() const;

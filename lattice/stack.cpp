@@ -11,6 +11,7 @@
 #include "object.hpp"
 #include "reference.hpp"
 #include "state.hpp"
+#include "userdata.hpp"
 
 namespace
 {
@@ -58,6 +59,30 @@ namespace
         ensure(api, 1);
         (api.*method)(args...);
         return api.getStackSize();
+    }
+
+    int invokeFunction(lua_State* state)
+    {
+        lat::LuaApi api(*state);
+        try
+        {
+            lat::Stack stack(state);
+            api.pushUpValue(1);
+            auto function = stack.getObject(-1).as<std::function<int(lat::Stack&)>*>();
+            api.pop(1);
+            return (*function)(stack);
+        }
+        catch (const std::exception& e)
+        {
+            api.setStackSize(0);
+            api.pushCString(e.what());
+        }
+        catch (...)
+        {
+            api.setStackSize(0);
+            api.pushString("unknown error");
+        }
+        api.error();
     }
 }
 
@@ -150,6 +175,11 @@ namespace lat
     void BasicStack::collectGarbage()
     {
         api().runGarbageCollector();
+    }
+
+    bool BasicStack::collectGarbage(int size)
+    {
+        return api().runGarbageCollectionStep(size);
     }
 
     int BasicStack::makeAbsolute(int index) const
@@ -301,6 +331,13 @@ namespace lat
             default:
                 throw std::logic_error("invalid state");
         }
+    }
+
+    FunctionView BasicStack::pushFunction(std::function<int(Stack&)> function)
+    {
+        State::getUserTypeRegistry(*this).pushValue(*this, std::move(function));
+        api().pushFunction(&invokeFunction, 1);
+        return getObject(-1).asFunction();
     }
 
     ObjectView BasicStack::pushLightUserData(void* value)

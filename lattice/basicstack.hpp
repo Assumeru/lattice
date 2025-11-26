@@ -38,7 +38,7 @@ namespace lat
 
         Reference store(int);
 
-        FunctionView pushFunction(std::function<int(Stack&)>);
+        FunctionView pushFunctionImpl(std::function<int(Stack&)>);
 
         friend class FunctionView;
         friend class ObjectView;
@@ -82,6 +82,8 @@ namespace lat
         FunctionView pushFunction(std::string_view lua, const char* name = nullptr);
         ObjectView pushLightUserData(void*);
         std::span<std::byte> pushUserData(std::size_t);
+        template <class T>
+        FunctionView pushFunction(T&&);
     };
 }
 

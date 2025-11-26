@@ -333,7 +333,7 @@ namespace lat
         }
     }
 
-    FunctionView BasicStack::pushFunction(std::function<int(Stack&)> function)
+    FunctionView BasicStack::pushFunctionImpl(std::function<int(Stack&)> function)
     {
         State::getUserTypeRegistry(*this).pushValue(*this, std::move(function));
         api().pushFunction(&invokeFunction, 1);

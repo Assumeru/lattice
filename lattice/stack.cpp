@@ -6,6 +6,7 @@
 #include <new>
 #include <stdexcept>
 
+#include "exception.hpp"
 #include "function.hpp"
 #include "lua/api.hpp"
 #include "object.hpp"
@@ -61,6 +62,23 @@ namespace
         return api.getStackSize();
     }
 
+    [[noreturn]] void raiseLuaError(lat::LuaApi& api, std::string_view message)
+    {
+        api.setStackSize(0);
+        api.pushPositionString(1);
+        std::string_view position = api.toString(-1);
+        api.pop(1);
+        if (position.empty())
+            api.pushString(message);
+        else
+        {
+            std::string error(position);
+            error += message;
+            api.pushString(error);
+        }
+        api.error();
+    }
+
     int invokeFunction(lua_State* state)
     {
         lat::LuaApi api(*state);
@@ -72,17 +90,21 @@ namespace
             api.pop(1);
             return (*function)(stack);
         }
+        catch (const lat::ArgumentTypeError& e)
+        {
+            // Free up what space we can, but keep the bad index so the error message can show its type
+            if (api.getStackSize() > e.getIndex())
+                api.setStackSize(e.getIndex());
+            api.raiseArgumentTypeError(e.getIndex(), e.getType().data());
+        }
         catch (const std::exception& e)
         {
-            api.setStackSize(0);
-            api.pushCString(e.what());
+            raiseLuaError(api, e.what());
         }
         catch (...)
         {
-            api.setStackSize(0);
-            api.pushString("unknown error");
+            raiseLuaError(api, "unknown error");
         }
-        api.error();
     }
 }
 
@@ -139,15 +161,12 @@ namespace lat
                 }
                 catch (const std::exception& e)
                 {
-                    api.setStackSize(0);
-                    api.pushCString(e.what());
+                    raiseLuaError(api, e.what());
                 }
                 catch (...)
                 {
-                    api.setStackSize(0);
-                    api.pushString("unknown error");
+                    raiseLuaError(api, "unknown error");
                 }
-                api.error();
             },
             &function);
     }
@@ -271,7 +290,10 @@ namespace lat
 
     ObjectView BasicStack::getObject(int index)
     {
-        return tryGetObject(index).value();
+        std::optional<ObjectView> object = tryGetObject(index);
+        if (object)
+            return *object;
+        throw TypeError("object");
     }
 
     std::optional<ObjectView> BasicStack::tryGetObject(int index)

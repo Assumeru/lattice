@@ -1,6 +1,7 @@
 #include "object.hpp"
 
 #include "basicstack.hpp"
+#include "exception.hpp"
 #include "function.hpp"
 #include "lua/api.hpp"
 #include "reference.hpp"
@@ -64,7 +65,7 @@ namespace lat
     Nil ObjectView::asNil() const
     {
         if (!isNil())
-            throw std::runtime_error("value is not nil");
+            throw TypeError("nil");
         return nil;
     }
 
@@ -73,7 +74,7 @@ namespace lat
         LuaApi api = mStack.api();
         bool value = api.asBoolean(mIndex);
         if (!value && !api.isBoolean(mIndex))
-            throw std::runtime_error("value is not a boolean");
+            throw TypeError("boolean");
         return value;
     }
 
@@ -82,7 +83,7 @@ namespace lat
         LuaApi api = mStack.api();
         lua_Integer value = api.asInteger(mIndex);
         if (value == 0 && !api.isNumber(mIndex))
-            throw std::runtime_error("value is not an integer");
+            throw TypeError("integer");
         return value;
     }
 
@@ -91,7 +92,7 @@ namespace lat
         LuaApi api = mStack.api();
         lua_Number value = api.asNumber(mIndex);
         if (value == 0. && !api.isNumber(mIndex))
-            throw std::runtime_error("value is not a number");
+            throw TypeError("number");
         return value;
     }
 
@@ -100,20 +101,20 @@ namespace lat
         LuaApi api = mStack.api();
         if (api.isString(mIndex))
             return api.toString(mIndex);
-        throw std::runtime_error("value is not a string");
+        throw TypeError("string");
     }
 
     TableView ObjectView::asTable() const
     {
         if (!isTable())
-            throw std::runtime_error("value is not a table");
+            throw TypeError("table");
         return TableView(mStack, mIndex);
     }
 
     FunctionView ObjectView::asFunction() const
     {
         if (!isFunction())
-            throw std::runtime_error("value is not a function");
+            throw TypeError("function");
         return FunctionView(mStack, mIndex);
     }
 
@@ -122,7 +123,7 @@ namespace lat
         LuaApi api = mStack.api();
         void* data = api.asUserData(mIndex);
         if (data == nullptr && !api.isUserData(mIndex))
-            throw std::runtime_error("value is not user data");
+            throw TypeError("user data");
         std::size_t size = api.getObjectSize(mIndex);
         return { reinterpret_cast<std::byte*>(data), size };
     }
@@ -130,7 +131,7 @@ namespace lat
     void* ObjectView::asLightUserData() const
     {
         if (!isLightUserData())
-            throw std::runtime_error("value is not light user data");
+            throw TypeError("light user data");
         return mStack.api().asUserData(mIndex);
     }
 

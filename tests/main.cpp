@@ -24,13 +24,16 @@ namespace
                 std::cout << "start\n";
                 auto function = stack.pushFunction([](int a, int b) {
                     std::cout << "test: " << a << b << '\n';
+                    if (b == 4)
+                        throw std::runtime_error("b == 4");
                     return a + b;
                 });
                 stack["f"] = function;
                 stack.execute(R"(
                     local function test(...)
                         local args = { ... }
-                        local status, res = pcall(function() return f(unpack(args)) end)
+                        local function test2() return f(unpack(args)) end
+                        local status, res = pcall(test2)
                         if status then
                             print('success', res)
                         else
@@ -38,7 +41,9 @@ namespace
                         end
                     end
                     test(1)
+                    test(1, 'a')
                     test(1, 2)
+                    test(1, 4)
                     )");
             });
         }

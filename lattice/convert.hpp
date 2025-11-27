@@ -51,6 +51,9 @@ namespace lat
         template <class T>
         concept StringViewConstructible = std::is_constructible_v<std::string_view, T>;
 
+        template <class T>
+        concept Function = requires(T&& value) { std::function(std::forward<T>(value)); };
+
         inline void pushValue(BasicStack& stack, Nil)
         {
             stack.pushNil();
@@ -99,7 +102,9 @@ namespace lat
         template <Optional T>
         inline bool isValue(const BasicStack& stack, int& pos, Type<T>)
         {
-            if (stack.isNil(pos))
+            if (stack.getTop() > pos)
+                return true;
+            else if (stack.isNil(pos))
             {
                 ++pos;
                 return true;
@@ -227,6 +232,8 @@ namespace lat
             }
             else if constexpr (std::is_array_v<T>)
                 static_assert(false, "array types are not supported");
+            else if constexpr (Function<T>)
+                stack.pushFunction(std::forward<V>(value));
             else if constexpr (std::is_pointer_v<T>)
             {
                 if (value == nullptr)
@@ -275,7 +282,9 @@ namespace lat
         template <Optional T>
         inline T pullValue(BasicStack& stack, int& pos, Type<T>)
         {
-            if (stack.isNil(pos))
+            if (stack.getTop() > pos)
+                return {};
+            else if (stack.isNil(pos))
             {
                 stack.remove(pos);
                 return {};

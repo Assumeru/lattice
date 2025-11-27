@@ -1,5 +1,6 @@
 #include "userdata.hpp"
 
+#include "exception.hpp"
 #include "lua/api.hpp"
 #include "reference.hpp"
 #include "stack.hpp"
@@ -41,11 +42,6 @@ namespace lat
                 api.pushString("error in destructor");
             }
             api.error();
-        }
-
-        [[noreturn]] void typeError(const std::type_info& type)
-        {
-            throw std::runtime_error(std::string("value is not of type ") + type.name());
         }
     }
 
@@ -147,18 +143,18 @@ namespace lat
     {
         ObjectView view = stack.getObject(index);
         if (!view.isUserData())
-            typeError(type);
+            throw TypeError(type.name());
         const auto found = mMetatables.find(type);
         if (found == mMetatables.end())
-            typeError(type);
+            throw TypeError(type.name());
         std::optional<ObjectView> metatable = view.pushMetatable();
         if (!metatable)
-            typeError(type);
+            throw TypeError(type.name());
         found->second.pushTo(stack);
         const bool same = stack.api().rawEqual(-1, -2);
         stack.pop(2);
         if (!same)
-            typeError(type);
+            throw TypeError(type.name());
         std::span<std::byte> data = view.asUserData();
         if (data.size() < pointerSize)
             throw std::runtime_error("invalid object");

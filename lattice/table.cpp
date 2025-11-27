@@ -1,5 +1,6 @@
 #include "table.hpp"
 
+#include "exception.hpp"
 #include "lua/api.hpp"
 #include "reference.hpp"
 
@@ -12,7 +13,7 @@ namespace lat
         mStack.ensure(1);
         LuaApi api = mStack.api();
         if (!api.isTable(table))
-            throw std::runtime_error("attempted to index non-table value");
+            throw TypeError("table");
         api.pushTableValue(table);
         if (pop)
             api.remove(table);

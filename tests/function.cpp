@@ -42,7 +42,8 @@ namespace
     TEST_F(FunctionTest, arguments_are_passed_in_the_right_order)
     {
         mState.withStack([](Stack& stack) {
-            auto function = stack.execute<ReturningFunctionView<int>>("return function(a, b) if (a == true) then error(a) end return b end");
+            auto function = stack.execute<ReturningFunctionView<int>>(
+                "return function(a, b) if (a == true) then error(a) end return b end");
             EXPECT_ANY_THROW(function(true, 1));
             EXPECT_EQ(function(false, 2), 2);
             EXPECT_EQ(function(false, 3), 3);
@@ -69,7 +70,8 @@ namespace
     TEST_F(FunctionTest, can_return_variable_values)
     {
         mState.withStack([](Stack& stack) {
-            auto function = stack.execute<ReturningFunctionView<std::vector<ObjectView>>>("return function(...) return ... end");
+            auto function
+                = stack.execute<ReturningFunctionView<std::vector<ObjectView>>>("return function(...) return ... end");
             {
                 EXPECT_TRUE(function().empty());
             }
@@ -93,8 +95,10 @@ namespace
     {
         mState.loadLibraries({ { Library::Base } });
         mState.withStack([](Stack& stack) {
-            auto coroutine = stack.execute<ObjectView>("return coroutine.create(function(a) a = coroutine.yield(a, 1) coroutine.yield(a, 2) end)");
-            auto resumeGenerator = stack.execute<FunctionView>("return function(t) return function(a) return coroutine.resume(t, a) end end");
+            auto coroutine = stack.execute<ObjectView>(
+                "return coroutine.create(function(a) a = coroutine.yield(a, 1) coroutine.yield(a, 2) end)");
+            auto resumeGenerator = stack.execute<FunctionView>(
+                "return function(t) return function(a) return coroutine.resume(t, a) end end");
             auto resume = resumeGenerator.invoke<ReturningFunctionView<std::tuple<bool, int, int>>>(coroutine);
             {
                 auto [success, input, value] = resume(11);
@@ -110,6 +114,50 @@ namespace
             }
             EXPECT_TRUE(resume.invoke<bool>());
             EXPECT_FALSE(resume.invoke<bool>());
+        });
+    }
+
+    TEST_F(FunctionTest, can_call_lambda_from_lua)
+    {
+        mState.withStack([](Stack& stack) {
+            bool called = false;
+            stack["f"] = [&] { called = true; };
+            stack.execute("f()");
+            EXPECT_TRUE(called);
+        });
+    }
+
+    TEST_F(FunctionTest, can_convert_lua_arguments)
+    {
+        mState.withStack([](Stack& stack) {
+            stack["f"] = [](std::string_view a, int b, float c, TableView d) {
+                EXPECT_EQ(a, "a");
+                EXPECT_EQ(b, 1);
+                EXPECT_EQ(c, 0.2f);
+                EXPECT_EQ(d.size(), 0);
+            };
+            stack.execute("f('a', 1, 0.2, {})");
+        });
+    }
+
+    TEST_F(FunctionTest, can_use_stack_argument)
+    {
+        mState.withStack([](Stack& stack) {
+            FunctionView function = stack.pushFunction([](Stack& a, BasicStack& b) { EXPECT_EQ(&a, &b); });
+            function();
+        });
+    }
+
+    TEST_F(FunctionTest, lambda_can_return_values)
+    {
+        mState.withStack([](Stack& stack) {
+            stack["f1"] = [](int a, int b) { return a + b; };
+            stack.execute("if f1(1, 2) ~= 3 then error('1 + 2 = 3') end");
+            stack["f2"] = [](int a, int b) { return std::tuple(a + 2, b + 1); };
+            stack.execute(R"(
+                local a, b = f2(2, 3)
+                if (a ~= b) then error('4 == 4') end
+                )");
         });
     }
 }

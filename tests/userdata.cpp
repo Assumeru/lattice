@@ -46,6 +46,18 @@ namespace
         });
     }
 
+    TEST_F(UserDataTest, can_push_reference_wrapper)
+    {
+        mState.withStack([](Stack& stack) {
+            TestData value{ 4 };
+            std::reference_wrapper<TestData> wrapper = value;
+            ObjectView view = stack.push(wrapper);
+            EXPECT_TRUE(view.isUserData());
+            std::span<std::byte> data = view.asUserData();
+            EXPECT_EQ(pointerSize, data.size());
+        });
+    }
+
     struct DestructorTestData
     {
         bool* mDestroyed;
@@ -105,6 +117,10 @@ namespace
             {
                 const TestData& ref = view.as<const TestData&>();
                 EXPECT_EQ(ref.mValue, value.mValue);
+            }
+            {
+                const auto ref = view.as<std::reference_wrapper<TestData>>();
+                EXPECT_EQ(ref.get().mValue, value.mValue);
             }
             EXPECT_ANY_THROW(view.as<const DestructorTestData*>());
             {

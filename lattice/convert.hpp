@@ -46,7 +46,7 @@ namespace lat
         concept Tuple = isTuple<T>;
 
         template <class T>
-        constexpr inline bool isReferenceWrapper = !std::is_same_v<T, std::unwrap_reference_t<T>>;
+        concept ReferenceWrapper = !std::is_same_v<T, std::unwrap_reference_t<T>>;
 
         template <class T>
         concept StringViewConstructible = std::is_constructible_v<std::string_view, T>;
@@ -225,9 +225,9 @@ namespace lat
                 else
                     stack.pushNil();
             }
-            else if constexpr (isReferenceWrapper<T>)
+            else if constexpr (ReferenceWrapper<T>)
             {
-                using RefT = typename V::type;
+                using RefT = typename T::type;
                 pushToStack<RefT&, true>(stack, value.get());
             }
             else if constexpr (std::is_array_v<T>)
@@ -272,6 +272,11 @@ namespace lat
             if constexpr (IsSpecialized<T>)
             {
                 return isValue(stack, pos, Type<T>{});
+            }
+            else if constexpr (ReferenceWrapper<T>)
+            {
+                using RefT = typename T::type;
+                return State::getUserTypeRegistry(stack).matches<RefT>(stack, pos++);
             }
             else
             {
@@ -345,6 +350,12 @@ namespace lat
         else if constexpr (detail::GetFromViewSpecialized<T>)
         {
             return detail::getValue(*this, Type<T>{});
+        }
+        else if constexpr (detail::ReferenceWrapper<T>)
+        {
+            using RefT = typename T::type;
+            auto* value = State::getUserTypeRegistry(mStack).as<RefT>(mStack, mIndex);
+            return std::forward<Value>(*value);
         }
         else
         {

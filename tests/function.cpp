@@ -183,4 +183,19 @@ namespace
                 )");
         });
     }
+
+    TEST_F(FunctionTest, can_return_table_value)
+    {
+        mState.loadLibraries({ { Library::Base } });
+        mState.withStack([](Stack& stack) {
+            stack["f"] = [](TableView table, std::string_view key) -> ObjectView { return table[key]; };
+            stack.execute(R"(
+                local function test(result, expected)
+                    if result ~= expected then error('Expected ' .. expected .. ' got ' .. result) end
+                end
+                test(f({}, 'a'), nil)
+                test(f({ a = 1 }, 'a'), 1)
+                )");
+        });
+    }
 }

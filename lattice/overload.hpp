@@ -4,6 +4,7 @@
 #include "convert.hpp"
 #include "exception.hpp"
 #include "forwardstack.hpp"
+#include "table.hpp"
 
 #include <array>
 #include <tuple>
@@ -47,6 +48,7 @@ namespace lat
         template <class R, class... Args>
         inline std::function<int(Stack&)> wrapFunction(std::function<R(Args...)> function)
         {
+            static_assert(!detail::IndexedTable<std::remove_cvref_t<R>>, "IndexedTableView's key is likely to dangle");
             return [function = std::move(function)]([[maybe_unused]] Stack& stack) -> int {
                 int argPos = 1;
                 auto argValues = std::tuple<Args...>{ detail::pullFunctionArgument<Args>(stack, argPos)... };

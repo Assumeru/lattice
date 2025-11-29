@@ -41,6 +41,7 @@ namespace
 
     TEST_F(FunctionTest, arguments_are_passed_in_the_right_order)
     {
+        mState.loadLibraries({ { Library::Base } });
         mState.withStack([](Stack& stack) {
             auto function = stack.execute<ReturningFunctionView<int>>(
                 "return function(a, b) if (a == true) then error(a) end return b end");
@@ -150,6 +151,7 @@ namespace
 
     TEST_F(FunctionTest, lambda_can_return_values)
     {
+        mState.loadLibraries({ { Library::Base } });
         mState.withStack([](Stack& stack) {
             stack["f1"] = [](int a, int b) { return a + b; };
             stack.execute("if f1(1, 2) ~= 3 then error('1 + 2 = 3') end");
@@ -157,6 +159,27 @@ namespace
             stack.execute(R"(
                 local a, b = f2(2, 3)
                 if (a ~= b) then error('4 == 4') end
+                )");
+        });
+    }
+
+    TEST_F(FunctionTest, can_overload_functions)
+    {
+        mState.loadLibraries({ { Library::Base } });
+        mState.withStack([](Stack& stack) {
+            stack["f"] = Overload([](int a) { return a + 1; }, [](Nil) { return -1; },
+                [](Stack&, std::string_view value) { return value[0]; }, [x = 0]() mutable { return ++x; });
+            stack.execute(R"(
+                local function test(result, expected)
+                    if result ~= expected then error('Expected ' .. expected .. ' got ' .. result) end
+                end
+                test(f(1), 2)
+                test(f(2), 3)
+                test(f(nil), -1)
+                test(f(), 1)
+                test(f(), 2)
+                test(f('a'), 97)
+                test(f('b'), 98)
                 )");
         });
     }

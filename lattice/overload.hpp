@@ -94,12 +94,26 @@ namespace lat
 
         Overload(const Overload&) = delete;
 
+        template <class T>
+        static bool matches([[maybe_unused]] Stack& stack, [[maybe_unused]] int& pos)
+        {
+            if constexpr (std::is_base_of_v<std::remove_cvref_t<T>, Stack>)
+            {
+                static_assert(std::is_lvalue_reference_v<T>, "Stack can only be captured by reference");
+                return true;
+            }
+            else
+            {
+                return pos <= stack.getTop() && detail::stackValueIs<T>(stack, pos);
+            }
+        }
+
         template <class R, class... Args>
         static Wrapped wrap(std::function<R(Args...)> function)
         {
-            return { [](Stack& stack) -> bool {
+            return { []([[maybe_unused]] Stack& stack) -> bool {
                         int pos = 1;
-                        return (true && ... && (pos <= stack.getTop() && detail::stackValueIs<Args>(stack, pos)));
+                        return (true && ... && matches<Args>(stack, pos));
                     },
                 detail::wrapFunction(std::move(function)) };
         }

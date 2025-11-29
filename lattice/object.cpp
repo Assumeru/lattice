@@ -1,7 +1,7 @@
 #include "object.hpp"
 
-#include "basicstack.hpp"
 #include "exception.hpp"
+#include "forwardstack.hpp"
 #include "function.hpp"
 #include "lua/api.hpp"
 #include "reference.hpp"
@@ -135,7 +135,7 @@ namespace lat
         return mStack.api().asUserData(mIndex);
     }
 
-    ObjectView ObjectView::pushTo(BasicStack& stack)
+    ObjectView ObjectView::pushTo(Stack& stack)
     {
         const bool sameStack = [&] {
             if (stack.mState == mStack.mState)

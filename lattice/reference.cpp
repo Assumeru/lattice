@@ -49,7 +49,7 @@ namespace lat
         return mRef != LUA_NOREF;
     }
 
-    ObjectView Reference::pushTo(BasicStack& stack) const
+    ObjectView Reference::pushTo(Stack& stack) const
     {
         if (mRef == LUA_NOREF)
             throw std::runtime_error("invalid reference");
@@ -130,7 +130,7 @@ namespace lat
         return mReference.isValid();
     }
 
-    FunctionView FunctionReference::pushTo(BasicStack& stack) const
+    FunctionView FunctionReference::pushTo(Stack& stack) const
     {
         return mReference.pushTo(stack).asFunction();
     }
@@ -167,7 +167,7 @@ namespace lat
         return mReference.isValid();
     }
 
-    TableView TableReference::pushTo(BasicStack& stack) const
+    TableView TableReference::pushTo(Stack& stack) const
     {
         return mReference.pushTo(stack).asTable();
     }

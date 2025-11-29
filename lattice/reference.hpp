@@ -7,7 +7,6 @@ struct lua_State;
 
 namespace lat
 {
-    class BasicStack;
     class FunctionView;
     class ObjectView;
     class Stack;
@@ -47,7 +46,7 @@ namespace lat
         void reset();
         bool isValid() const;
 
-        ObjectView pushTo(BasicStack&) const;
+        ObjectView pushTo(Stack&) const;
         void onStack(FunctionRef<void(Stack&, ObjectView)>);
 
         void operator=(ObjectView&);
@@ -71,7 +70,7 @@ namespace lat
         void reset();
         bool isValid() const;
 
-        FunctionView pushTo(BasicStack&) const;
+        FunctionView pushTo(Stack&) const;
         void onStack(FunctionRef<void(Stack&, FunctionView)>);
 
         void operator=(FunctionView&);
@@ -97,7 +96,7 @@ namespace lat
         void reset();
         bool isValid() const;
 
-        TableView pushTo(BasicStack&) const;
+        TableView pushTo(Stack&) const;
         void onStack(FunctionRef<void(Stack&, TableView)>);
 
         void operator=(TableView&);

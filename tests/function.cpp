@@ -143,7 +143,7 @@ namespace
     TEST_F(FunctionTest, can_use_stack_argument)
     {
         mState.withStack([](Stack& stack) {
-            FunctionView function = stack.pushFunction([](Stack& a, BasicStack& b) { EXPECT_EQ(&a, &b); });
+            FunctionView function = stack.pushFunction([](Stack& a, Stack& b) { EXPECT_EQ(&a, &b); });
             function();
         });
     }

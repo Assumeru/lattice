@@ -14,7 +14,6 @@
 
 namespace lat
 {
-    class BasicStack;
     class Stack;
     class TableReference;
 
@@ -40,20 +39,20 @@ namespace lat
             destroyUserData(view, [](void* pointer) { std::destroy_at(static_cast<T*>(pointer)); });
         }
 
-        const TableReference& getMetatable(BasicStack&, std::type_index, UserDataDestructor);
+        const TableReference& getMetatable(Stack&, std::type_index, UserDataDestructor);
 
-        std::span<std::byte> pushUserData(BasicStack&, std::size_t, const void*, std::type_index, UserDataDestructor);
+        std::span<std::byte> pushUserData(Stack&, std::size_t, const void*, std::type_index, UserDataDestructor);
 
-        void pushUserData(BasicStack&, std::size_t, std::size_t, const std::type_info&, UserDataDestructor,
-            FunctionRef<void*(void*)>);
+        void pushUserData(
+            Stack&, std::size_t, std::size_t, const std::type_info&, UserDataDestructor, FunctionRef<void*(void*)>);
 
-        bool matches(const BasicStack&, int, std::type_index) const;
+        bool matches(const Stack&, int, std::type_index) const;
 
-        void* getUserData(BasicStack&, int, const std::type_info&) const;
+        void* getUserData(Stack&, int, const std::type_info&) const;
 
     public:
         template <class Value, class T = std::remove_cvref_t<Value>>
-        void pushPointer(BasicStack& stack, Value&& value)
+        void pushPointer(Stack& stack, Value&& value)
         {
             static_assert(!std::is_pointer_v<T>);
             // Light user data cannot have a unique metatable so we push a full user data the size of a pointer
@@ -61,7 +60,7 @@ namespace lat
         }
 
         template <class Value, class T = std::remove_cvref_t<Value>>
-        void pushValue(BasicStack& stack, Value&& value)
+        void pushValue(Stack& stack, Value&& value)
         {
             static_assert(!std::is_pointer_v<T>);
             pushUserData(stack, sizeof(T), alignof(T), typeid(T), &destroyUserData<T>,
@@ -69,13 +68,13 @@ namespace lat
         }
 
         template <class Value, class T = std::remove_cvref_t<std::remove_pointer_t<Value>>>
-        bool matches(const BasicStack& stack, int index) const
+        bool matches(const Stack& stack, int index) const
         {
             return matches(stack, index, std::type_index(typeid(T)));
         }
 
         template <class Value, class T = std::remove_cvref_t<std::remove_pointer_t<Value>>>
-        T* as(BasicStack& stack, int index) const
+        T* as(Stack& stack, int index) const
         {
             void* value = getUserData(stack, index, typeid(T));
             return static_cast<T*>(value);

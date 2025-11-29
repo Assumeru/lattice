@@ -70,7 +70,7 @@ namespace lat
     }
 
     std::span<std::byte> UserTypeRegistry::pushUserData(
-        BasicStack& stack, std::size_t size, const void* pointer, std::type_index type, UserDataDestructor destructor)
+        Stack& stack, std::size_t size, const void* pointer, std::type_index type, UserDataDestructor destructor)
     {
         const TableReference& ref = getMetatable(stack, type, destructor);
         TableView metatable = ref.pushTo(stack);
@@ -81,8 +81,8 @@ namespace lat
         return data;
     }
 
-    void UserTypeRegistry::pushUserData(BasicStack& stack, std::size_t size, std::size_t align,
-        const std::type_info& type, UserDataDestructor destructor, FunctionRef<void*(void*)> constructor)
+    void UserTypeRegistry::pushUserData(Stack& stack, std::size_t size, std::size_t align, const std::type_info& type,
+        UserDataDestructor destructor, FunctionRef<void*(void*)> constructor)
     {
         // object + padding to ensure alignment
         const std::size_t dataSize = size + align - 1;
@@ -106,7 +106,7 @@ namespace lat
     }
 
     const TableReference& UserTypeRegistry::getMetatable(
-        BasicStack& stack, std::type_index type, UserDataDestructor destructor)
+        Stack& stack, std::type_index type, UserDataDestructor destructor)
     {
         auto found = mMetatables.find(type);
         if (found == mMetatables.end())
@@ -121,14 +121,14 @@ namespace lat
         return found->second;
     }
 
-    bool UserTypeRegistry::matches(const BasicStack& stack, int index, std::type_index type) const
+    bool UserTypeRegistry::matches(const Stack& stack, int index, std::type_index type) const
     {
         if (!stack.isUserData(index) || stack.isLightUserData(index))
             return false;
         const auto found = mMetatables.find(type);
         if (found == mMetatables.end())
             return false;
-        BasicStack& mutStack = const_cast<BasicStack&>(stack);
+        Stack& mutStack = const_cast<Stack&>(stack);
         mutStack.ensure(2);
         LuaApi api = stack.api();
         if (!api.pushMetatable(index))
@@ -139,7 +139,7 @@ namespace lat
         return same;
     }
 
-    void* UserTypeRegistry::getUserData(BasicStack& stack, int index, const std::type_info& type) const
+    void* UserTypeRegistry::getUserData(Stack& stack, int index, const std::type_info& type) const
     {
         ObjectView view = stack.getObject(index);
         if (!view.isUserData())

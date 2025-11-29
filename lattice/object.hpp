@@ -20,21 +20,21 @@ namespace lat
 
     constexpr inline Nil nil{};
 
-    class BasicStack;
     class FunctionView;
     class Reference;
+    class Stack;
     class TableView;
     enum class LuaType : int;
 
     class ObjectView
     {
-        BasicStack& mStack;
+        Stack& mStack;
         int mIndex;
 
         friend class Reference;
 
     public:
-        ObjectView(BasicStack& stack, int index)
+        ObjectView(Stack& stack, int index)
             : mStack(stack)
             , mIndex(index)
         {
@@ -61,7 +61,7 @@ namespace lat
         std::span<std::byte> asUserData() const;
         void* asLightUserData() const;
 
-        ObjectView pushTo(BasicStack&);
+        ObjectView pushTo(Stack&);
 
         bool setEnvironment(TableView& environment);
         void setMetatable(TableView& metatable);

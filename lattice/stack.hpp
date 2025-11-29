@@ -1,54 +1,39 @@
 #ifndef LATTICE_STACK_H
 #define LATTICE_STACK_H
 
-#include "basicstack.hpp"
 #include "convert.hpp"
 #include "exception.hpp"
+#include "forwardstack.hpp"
 #include "function.hpp"
 #include "table.hpp"
 
 namespace lat
 {
-    // Non-owning lua_State wrapper
-    class Stack : public BasicStack
+    auto Stack::operator[](auto key)
     {
-        friend class Reference;
-        friend class State;
-        friend struct MainStack;
+        return globals()[key];
+    }
 
-        void call(FunctionRef<void(Stack&)>);
+    template <class... Ret>
+    auto Stack::pushFunctionReturning(std::string_view lua, const char* name)
+    {
+        return pushFunction(lua, name).returning<Ret...>();
+    }
 
-    public:
-        explicit Stack(lua_State*);
+    template <class... Ret>
+    auto Stack::execute(std::string_view lua, const char* name)
+    {
+        auto loaded = pushFunctionReturning<Ret...>(lua, name);
+        using R = decltype(loaded)::type;
+        return loaded.mFunction.template invokeImpl<false, R>();
+    }
 
-        auto operator[](auto key) { return globals()[key]; }
-
-        TableView pushArray(int size) { return pushTable(0, size); }
-
-        template <class... Ret>
-        auto pushFunctionReturning(std::string_view lua, const char* name = nullptr)
-        {
-            return pushFunction(lua, name).returning<Ret...>();
-        }
-
-        template <class... Ret>
-        auto execute(std::string_view lua, const char* name = nullptr)
-        {
-            auto loaded = pushFunctionReturning<Ret...>(lua, name);
-            using R = decltype(loaded)::type;
-            return loaded.mFunction.template invokeImpl<false, R>();
-        }
-
-        template <class T>
-        ObjectView push(T&& value)
-        {
-            detail::pushToStack(*this, std::forward<T>(value));
-            return getObject(-1);
-        }
-
-        // TODO remove
-        lua_State* get() { return mState; }
-    };
+    template <class T>
+    ObjectView Stack::push(T&& value)
+    {
+        detail::pushToStack(*this, std::forward<T>(value));
+        return getObject(-1);
+    }
 
     namespace detail
     {
@@ -116,7 +101,7 @@ namespace lat
     }
 
     template <class T>
-    FunctionView BasicStack::pushFunction(T&& function)
+    FunctionView Stack::pushFunction(T&& function)
     {
         return pushFunctionImpl(detail::wrapFunction(std::function(function)));
     }

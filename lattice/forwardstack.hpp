@@ -1,5 +1,5 @@
-#ifndef LATTICE_BASICSTACK_H
-#define LATTICE_BASICSTACK_H
+#ifndef LATTICE_FORWARDSTACK_H
+#define LATTICE_FORWARDSTACK_H
 
 #include "functionref.hpp"
 
@@ -17,37 +17,41 @@ namespace lat
     class LuaApi;
     class ObjectView;
     class Reference;
-    class Stack;
     class TableView;
 
     // Non-owning lua_State wrapper
-    class BasicStack
+    class Stack
     {
     protected:
         lua_State* mState;
 
-        BasicStack(const BasicStack&) = delete;
-        BasicStack(BasicStack&&) = delete;
-        explicit BasicStack(lua_State*);
+        Stack(const Stack&) = delete;
+        Stack(Stack&&) = delete;
 
         LuaApi api();
         const LuaApi api() const;
 
         void protectedCall(int (*)(lua_State*), void*);
         void protectedCall(int, int);
+        void call(FunctionRef<void(Stack&)>);
 
         Reference store(int);
 
         FunctionView pushFunctionImpl(std::function<int(Stack&)>);
 
         friend class FunctionView;
+        friend struct MainStack;
         friend class ObjectView;
+        friend class Reference;
         friend class State;
         friend class TableView;
         friend class UserTypeRegistry;
 
     public:
+        explicit Stack(lua_State*);
+
         TableView globals();
+        auto operator[](auto key);
 
         void ensure(std::uint16_t extra);
 
@@ -79,11 +83,19 @@ namespace lat
         ObjectView pushNumber(double);
         ObjectView pushString(std::string_view);
         TableView pushTable(int objectSize = 0, int arraySize = 0);
+        TableView pushArray(int size);
         FunctionView pushFunction(std::string_view lua, const char* name = nullptr);
+        template <class... Ret>
+        auto pushFunctionReturning(std::string_view lua, const char* name = nullptr);
+        template <class T>
+        FunctionView pushFunction(T&&);
         ObjectView pushLightUserData(void*);
         std::span<std::byte> pushUserData(std::size_t);
         template <class T>
-        FunctionView pushFunction(T&&);
+        ObjectView push(T&& value);
+
+        template <class... Ret>
+        auto execute(std::string_view lua, const char* name = nullptr);
     };
 }
 

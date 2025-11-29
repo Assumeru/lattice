@@ -15,7 +15,6 @@ namespace lat
     using Allocator = void* (*)(UserData*, void*, std::size_t, std::size_t);
 
     enum class LuaHookMask : int;
-    class BasicStack;
     struct MainStack;
     class Stack;
     class UserTypeRegistry;
@@ -41,9 +40,9 @@ namespace lat
     {
         std::unique_ptr<MainStack> mState;
 
-        friend class BasicStack;
+        friend class Stack;
 
-        static Stack& getMain(BasicStack&);
+        static Stack& getMain(Stack&);
 
     public:
         State();
@@ -64,7 +63,7 @@ namespace lat
 
         void loadLibraries(std::span<const Library> = {}) const;
 
-        static UserTypeRegistry& getUserTypeRegistry(BasicStack&);
+        static UserTypeRegistry& getUserTypeRegistry(Stack&);
     };
 }
 

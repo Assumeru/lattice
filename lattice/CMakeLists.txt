@@ -17,9 +17,9 @@ target_sources(LibLattice
     PUBLIC
         FILE_SET HEADERS
         FILES
-            basicstack.hpp
             convert.hpp
             exception.hpp
+            forwardstack.hpp
             function.hpp
             object.hpp
             reference.hpp

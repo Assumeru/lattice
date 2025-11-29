@@ -1,8 +1,8 @@
 #ifndef LATTICE_FUNCTION_H
 #define LATTICE_FUNCTION_H
 
-#include "basicstack.hpp"
 #include "convert.hpp"
+#include "forwardstack.hpp"
 #include "object.hpp"
 
 #include <limits>
@@ -17,10 +17,10 @@ namespace lat
 
     class FunctionView
     {
-        BasicStack& mStack;
+        Stack& mStack;
         int mIndex;
 
-        FunctionView(BasicStack& stack, int index)
+        FunctionView(Stack& stack, int index)
             : mStack(stack)
             , mIndex(index)
         {
@@ -29,7 +29,6 @@ namespace lat
         void cleanUp(int prev);
         void call(int prev, int resCount);
 
-        friend class BasicStack;
         friend class ObjectView;
         friend class Stack;
 
@@ -166,12 +165,12 @@ namespace lat
             return ReturningFunctionView<std::tuple<Ret...>>(*this);
     }
 
-    inline FunctionView pullValue(BasicStack& stack, int& pos, Type<FunctionView>)
+    inline FunctionView pullValue(Stack& stack, int& pos, Type<FunctionView>)
     {
         return stack.getObject(pos++).asFunction();
     }
 
-    inline bool isValue(const BasicStack& stack, int& pos, Type<FunctionView>)
+    inline bool isValue(const Stack& stack, int& pos, Type<FunctionView>)
     {
         return stack.isFunction(pos++);
     }
@@ -191,13 +190,13 @@ namespace lat
     }
 
     template <detail::ReturningFunction T>
-    inline T pullValue(BasicStack& stack, int& pos, Type<T>)
+    inline T pullValue(Stack& stack, int& pos, Type<T>)
     {
         return stack.getObject(pos++).asFunction().returning<typename T::type>();
     }
 
     template <detail::ReturningFunction T>
-    inline bool isValue(const BasicStack& stack, int& pos, Type<T>)
+    inline bool isValue(const Stack& stack, int& pos, Type<T>)
     {
         return stack.isFunction(pos++);
     }

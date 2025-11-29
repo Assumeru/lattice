@@ -96,7 +96,7 @@ namespace lat
 
     State::~State() = default;
 
-    Stack& State::getMain(BasicStack& stack)
+    Stack& State::getMain(Stack& stack)
     {
         stack.ensure(1);
         LuaApi api = stack.api();
@@ -104,7 +104,7 @@ namespace lat
         return main->mStack;
     }
 
-    UserTypeRegistry& State::getUserTypeRegistry(BasicStack& stack)
+    UserTypeRegistry& State::getUserTypeRegistry(Stack& stack)
     {
         stack.ensure(1);
         LuaApi api = stack.api();

@@ -1,7 +1,7 @@
 #ifndef LATTICE_CONVERT_H
 #define LATTICE_CONVERT_H
 
-#include "basicstack.hpp"
+#include "forwardstack.hpp"
 #include "object.hpp"
 #include "state.hpp"
 #include "userdata.hpp"
@@ -54,53 +54,53 @@ namespace lat
         template <class T>
         concept Function = requires(T&& value) { std::function(std::forward<T>(value)); };
 
-        inline void pushValue(BasicStack& stack, Nil)
+        inline void pushValue(Stack& stack, Nil)
         {
             stack.pushNil();
         }
 
         template <StringViewConstructible T>
-        inline void pushValue(BasicStack& stack, T&& value)
+        inline void pushValue(Stack& stack, T&& value)
         {
             stack.pushString(value);
         }
 
         template <Enum T>
-        inline void pushValue(BasicStack& stack, T&& value)
+        inline void pushValue(Stack& stack, T&& value)
         {
             using EType = std::underlying_type_t<T>;
             stack.pushInteger(static_cast<EType>(value));
         }
 
-        inline bool isValue(const BasicStack& stack, int& pos, Type<Nil>)
+        inline bool isValue(const Stack& stack, int& pos, Type<Nil>)
         {
             return stack.isNil(pos++);
         }
 
-        inline bool isValue(const BasicStack& stack, int& pos, Type<bool>)
+        inline bool isValue(const Stack& stack, int& pos, Type<bool>)
         {
             return stack.isBoolean(pos++);
         }
 
         template <Number T>
-        inline bool isValue(const BasicStack& stack, int& pos, Type<T>)
+        inline bool isValue(const Stack& stack, int& pos, Type<T>)
         {
             return stack.isNumber(pos++);
         }
 
         template <std::constructible_from<std::string_view> T>
-        inline bool isValue(const BasicStack& stack, int& pos, Type<T>)
+        inline bool isValue(const Stack& stack, int& pos, Type<T>)
         {
             return stack.isString(pos++);
         }
 
-        inline bool isValue(const BasicStack& stack, int& pos, Type<ObjectView>)
+        inline bool isValue(const Stack& stack, int& pos, Type<ObjectView>)
         {
             return stack.getTop() >= pos++;
         }
 
         template <Optional T>
-        inline bool isValue(const BasicStack& stack, int& pos, Type<T>)
+        inline bool isValue(const Stack& stack, int& pos, Type<T>)
         {
             if (stack.getTop() > pos)
                 return true;
@@ -141,12 +141,12 @@ namespace lat
             return T(view.asString());
         }
 
-        inline ObjectView pullValue(BasicStack& stack, int& pos, Type<ObjectView>)
+        inline ObjectView pullValue(Stack& stack, int& pos, Type<ObjectView>)
         {
             return stack.getObject(pos++);
         }
 
-        inline std::vector<ObjectView> pullValue(BasicStack& stack, int& pos, Type<std::vector<ObjectView>>)
+        inline std::vector<ObjectView> pullValue(Stack& stack, int& pos, Type<std::vector<ObjectView>>)
         {
             const int top = stack.getTop();
             if (pos > top)
@@ -159,10 +159,10 @@ namespace lat
         }
 
         template <class T>
-        concept PushSpecialized = requires(BasicStack& stack, T&& value) { pushValue(stack, std::forward<T>(value)); };
+        concept PushSpecialized = requires(Stack& stack, T&& value) { pushValue(stack, std::forward<T>(value)); };
         template <class T>
         concept PreConvPushSpecialized
-            = requires(BasicStack& stack, T&& value) { pushPreConvValue(stack, std::forward<T>(value)); };
+            = requires(Stack& stack, T&& value) { pushPreConvValue(stack, std::forward<T>(value)); };
 
         template <class T>
         concept GetFromViewSpecialized = requires(ObjectView view, Type<T> type) {
@@ -170,12 +170,12 @@ namespace lat
         };
 
         template <class T>
-        concept PullSpecialized = requires(BasicStack& stack, int& pos, Type<T> type) {
+        concept PullSpecialized = requires(Stack& stack, int& pos, Type<T> type) {
             { pullValue(stack, pos, type) } -> std::constructible_from<T>;
         };
 
         template <class T>
-        concept IsSpecialized = requires(const BasicStack& stack, int& pos, Type<T> type) {
+        concept IsSpecialized = requires(const Stack& stack, int& pos, Type<T> type) {
             { isValue(stack, pos, type) } -> std::same_as<bool>;
         };
 
@@ -189,7 +189,7 @@ namespace lat
 
         template <class Value, bool light = false, class T = std::remove_cvref_t<Value>,
             class V = std::remove_volatile_t<Value>>
-        inline void pushToStack(BasicStack& stack, Value&& value)
+        inline void pushToStack(Stack& stack, Value&& value)
         {
             if constexpr (std::is_same_v<T, bool>)
             {
@@ -267,7 +267,7 @@ namespace lat
         }
 
         template <class Value, class T = std::remove_cvref_t<Value>>
-        inline bool stackValueIs(const BasicStack& stack, int& pos)
+        inline bool stackValueIs(const Stack& stack, int& pos)
         {
             if constexpr (IsSpecialized<T>)
             {
@@ -280,7 +280,7 @@ namespace lat
         }
 
         template <Optional T>
-        inline T pullValue(BasicStack& stack, int& pos, Type<T>)
+        inline T pullValue(Stack& stack, int& pos, Type<T>)
         {
             if (stack.getTop() > pos)
                 return {};
@@ -297,7 +297,7 @@ namespace lat
         }
 
         template <class Value, class T = std::remove_cvref_t<Value>>
-        inline Value pullFromStack(BasicStack& stack, int& pos)
+        inline Value pullFromStack(Stack& stack, int& pos)
         {
             if constexpr (PullSpecialized<T>)
             {

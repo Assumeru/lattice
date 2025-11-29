@@ -1,8 +1,8 @@
 #ifndef LATTICE_TABLE_H
 #define LATTICE_TABLE_H
 
-#include "basicstack.hpp"
 #include "convert.hpp"
+#include "forwardstack.hpp"
 #include "object.hpp"
 #include "reference.hpp"
 
@@ -47,10 +47,10 @@ namespace lat
 
     class TableView
     {
-        BasicStack& mStack;
+        Stack& mStack;
         int mIndex;
 
-        TableView(BasicStack& stack, int index)
+        TableView(Stack& stack, int index)
             : mStack(stack)
             , mIndex(index)
         {
@@ -127,8 +127,8 @@ namespace lat
 
         template <class>
         friend class IndexedTableView;
-        friend class BasicStack;
         friend class ObjectView;
+        friend class Stack;
         friend class TableViewIterator;
 
     public:
@@ -189,7 +189,7 @@ namespace lat
         template <class>
         friend class IndexedTableView;
         template <detail::IndexedTable T>
-        friend void pushPreConvValue(BasicStack&, T&&);
+        friend void pushPreConvValue(Stack&, T&&);
 
     public:
         using type = Path;
@@ -236,18 +236,18 @@ namespace lat
     }
 
     template <detail::IndexedTable T>
-    inline void pushPreConvValue(BasicStack& stack, T&& value)
+    inline void pushPreConvValue(Stack& stack, T&& value)
     {
         value.get().pushTo(stack);
         value.pop();
     }
 
-    inline TableView pullValue(BasicStack& stack, int& pos, Type<TableView>)
+    inline TableView pullValue(Stack& stack, int& pos, Type<TableView>)
     {
         return stack.getObject(pos++).asTable();
     }
 
-    inline bool isValue(const BasicStack& stack, int& pos, Type<TableView>)
+    inline bool isValue(const Stack& stack, int& pos, Type<TableView>)
     {
         return stack.isTable(pos++);
     }

@@ -56,7 +56,7 @@ namespace
     {
     };
 
-    void pushValue(BasicStack& stack, DoublePush)
+    void pushValue(Stack& stack, DoublePush)
     {
         stack.pushNil();
         stack.pushNil();

@@ -46,7 +46,7 @@ namespace lat
         void pushUserData(
             Stack&, std::size_t, std::size_t, const std::type_info&, UserDataDestructor, FunctionRef<void*(void*)>);
 
-        bool matches(const Stack&, int, std::type_index) const;
+        bool matches(Stack&, int, std::type_index) const;
 
         void* getUserData(Stack&, int, const std::type_info&) const;
 
@@ -68,7 +68,7 @@ namespace lat
         }
 
         template <class Value, class T = std::remove_cvref_t<std::remove_pointer_t<Value>>>
-        bool matches(const Stack& stack, int index) const
+        bool matches(Stack& stack, int index) const
         {
             return matches(stack, index, std::type_index(typeid(T)));
         }

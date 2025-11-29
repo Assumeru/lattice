@@ -121,19 +121,18 @@ namespace lat
         return found->second;
     }
 
-    bool UserTypeRegistry::matches(const Stack& stack, int index, std::type_index type) const
+    bool UserTypeRegistry::matches(Stack& stack, int index, std::type_index type) const
     {
         if (!stack.isUserData(index) || stack.isLightUserData(index))
             return false;
         const auto found = mMetatables.find(type);
         if (found == mMetatables.end())
             return false;
-        Stack& mutStack = const_cast<Stack&>(stack);
-        mutStack.ensure(2);
+        stack.ensure(2);
         LuaApi api = stack.api();
         if (!api.pushMetatable(index))
             return false;
-        found->second.pushTo(mutStack);
+        found->second.pushTo(stack);
         bool same = api.rawEqual(-1, -2);
         api.pop(2);
         return same;

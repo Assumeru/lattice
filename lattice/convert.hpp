@@ -100,7 +100,7 @@ namespace lat
         }
 
         template <Optional T>
-        inline bool isValue(const Stack& stack, int& pos, Type<T>)
+        inline bool isValue(Stack& stack, int& pos, Type<T>)
         {
             if (stack.getTop() > pos)
                 return true;
@@ -175,7 +175,7 @@ namespace lat
         };
 
         template <class T>
-        concept IsSpecialized = requires(const Stack& stack, int& pos, Type<T> type) {
+        concept IsSpecialized = requires(Stack& stack, int& pos, Type<T> type) {
             { isValue(stack, pos, type) } -> std::same_as<bool>;
         };
 
@@ -267,7 +267,7 @@ namespace lat
         }
 
         template <class Value, class T = std::remove_cvref_t<Value>>
-        inline bool stackValueIs(const Stack& stack, int& pos)
+        inline bool stackValueIs(Stack& stack, int& pos)
         {
             if constexpr (IsSpecialized<T>)
             {

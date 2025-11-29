@@ -22,13 +22,14 @@ namespace
             state.loadLibraries({});
             state.withStack([&](lat::Stack& stack) {
                 std::cout << "start\n";
-                auto function = stack.pushFunction([](int a, int b) {
-                    std::cout << "test: " << a << b << '\n';
-                    if (b == 4)
-                        throw std::runtime_error("b == 4");
-                    return a + b;
-                });
-                stack["f"] = function;
+                stack["f"] = lat::Overload(
+                    [](int a, int b) {
+                        std::cout << "test: " << a << b << '\n';
+                        if (b == 4)
+                            throw std::runtime_error("b == 4");
+                        return a + b;
+                    },
+                    [](int a) { return a - 1; });
                 stack.execute(R"(
                     local function test(...)
                         local args = { ... }
@@ -40,7 +41,7 @@ namespace
                             print('error', res)
                         end
                     end
-                    test(1)
+                    test(3)
                     test(1, 'a')
                     test(1, 2)
                     test(1, 4)

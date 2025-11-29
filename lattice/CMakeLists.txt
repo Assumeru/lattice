@@ -22,6 +22,7 @@ target_sources(LibLattice
             forwardstack.hpp
             function.hpp
             object.hpp
+            overload.hpp
             reference.hpp
             stack.hpp
             state.hpp

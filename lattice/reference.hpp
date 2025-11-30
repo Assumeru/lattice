@@ -61,6 +61,7 @@ namespace lat
 
         FunctionReference(Reference&& ref);
 
+        friend struct MainStack;
         friend class Reference;
         friend class FunctionView;
 
@@ -106,6 +107,10 @@ namespace lat
         friend bool operator==(const TableReference&, const TableReference&);
         friend bool operator==(const TableReference&, const FunctionReference&);
     };
+
+    void pushValue(Stack&, const Reference&);
+    void pushValue(Stack&, const FunctionReference&);
+    void pushValue(Stack&, const TableReference&);
 }
 
 #endif

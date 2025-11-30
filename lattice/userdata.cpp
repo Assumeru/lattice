@@ -6,6 +6,7 @@
 #include "stack.hpp"
 #include "state.hpp"
 #include "table.hpp"
+#include "usertype.hpp"
 
 #include <cstring>
 #include <stdexcept>
@@ -48,6 +49,8 @@ namespace lat
     void UserTypeRegistry::clear()
     {
         mMetatables.clear();
+        mDefaultIndex.reset();
+        mDefaultNewIndex.reset();
     }
 
     void UserTypeRegistry::destroyUserData(ObjectView view, Destructor consumer)
@@ -149,11 +152,19 @@ namespace lat
         std::optional<ObjectView> metatable = view.pushMetatable();
         if (!metatable)
             throw TypeError(type.name());
-        found->second.pushTo(stack);
+        TableView table = found->second.pushTo(stack);
         const bool same = stack.api().rawEqual(-1, -2);
-        stack.pop(2);
         if (!same)
-            throw TypeError(type.name());
+        {
+            std::string_view name;
+            if (auto currentType = table["__type"].get<std::optional<std::string_view>>())
+                name = *currentType;
+            else
+                name = type.name();
+            stack.pop(2);
+            throw TypeError(name);
+        }
+        stack.pop(2);
         std::span<std::byte> data = view.asUserData();
         if (data.size() < pointerSize)
             throw std::runtime_error("invalid object");
@@ -162,5 +173,20 @@ namespace lat
         if (pointer == nullptr)
             throw std::runtime_error("invalid object");
         return pointer;
+    }
+
+    UserType UserTypeRegistry::createUserType(
+        Stack& stack, std::type_index type, UserDataDestructor destructor, std::string_view name)
+    {
+        const TableReference& metatable = getMetatable(stack, type, destructor);
+        TableView table = metatable.pushTo(stack);
+        if (auto currentType = table["__type"].get<std::optional<std::string_view>>())
+        {
+            stack.pop();
+            throw std::runtime_error("user type has already been declared as " + std::string(*currentType));
+        }
+        table["__type"] = name;
+        stack.pop();
+        return UserType(stack, metatable, mDefaultIndex, mDefaultNewIndex);
     }
 }

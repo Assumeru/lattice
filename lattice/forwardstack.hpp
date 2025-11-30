@@ -18,6 +18,7 @@ namespace lat
     class ObjectView;
     class Reference;
     class TableView;
+    class UserType;
 
     // Non-owning lua_State wrapper
     class Stack
@@ -96,6 +97,9 @@ namespace lat
 
         template <class... Ret>
         auto execute(std::string_view lua, const char* name = nullptr);
+
+        template <class T>
+        UserType newUserType(std::string_view name);
     };
 }
 

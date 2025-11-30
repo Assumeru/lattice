@@ -13,38 +13,25 @@ namespace
 {
     struct Struct
     {
+        int mValue;
     };
     void test()
     {
         lat::State state;
         try
         {
-            state.loadLibraries({});
+            state.loadLibraries();
             state.withStack([&](lat::Stack& stack) {
                 std::cout << "start\n";
-                stack["f"] = lat::Overload(
-                    [](int a, int b) {
-                        std::cout << "test: " << a << b << '\n';
-                        if (b == 4)
-                            throw std::runtime_error("b == 4");
-                        return a + b;
-                    },
-                    [](int a) { return a - 1; });
+                auto type = stack.newUserType<Struct>("Struct");
+                type["value2"] = 1;
+                type.setProperty("value", [](const Struct& s) { return s.mValue; }, [](Struct& s, int v) { s.mValue = v; });
+                type[lat::meta::toString] = [](const Struct& s) { return "struct " + std::to_string(s.mValue); };
+                stack["v"] = Struct{ 2 };
                 stack.execute(R"(
-                    local function test(...)
-                        local args = { ... }
-                        local function test2() return f(unpack(args)) end
-                        local status, res = pcall(test2)
-                        if status then
-                            print('success', res)
-                        else
-                            print('error', res)
-                        end
-                    end
-                    test(3)
-                    test(1, 'a')
-                    test(1, 2)
-                    test(1, 4)
+                    print(v, v.value, v.value2)
+                    v.value = 3
+                    print(v.value)
                     )");
             });
         }

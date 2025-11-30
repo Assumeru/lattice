@@ -54,6 +54,9 @@ namespace lat
         template <class T>
         concept Function = requires(T&& value) { std::function(std::forward<T>(value)); };
 
+        template <class T>
+        concept String = std::is_constructible_v<T, std::string_view> && !Optional<T>;
+
         inline void pushValue(Stack& stack, Nil)
         {
             stack.pushNil();
@@ -88,7 +91,7 @@ namespace lat
             return stack.isNumber(pos++);
         }
 
-        template <std::constructible_from<std::string_view> T>
+        template <String T>
         inline bool isValue(const Stack& stack, int& pos, Type<T>)
         {
             return stack.isString(pos++);
@@ -135,7 +138,7 @@ namespace lat
             return static_cast<T>(view.asFloat());
         }
 
-        template <std::constructible_from<std::string_view> T>
+        template <String T>
         inline T getValue(ObjectView view, Type<T>)
         {
             return T(view.asString());
@@ -183,6 +186,8 @@ namespace lat
         constexpr inline bool pullsOneValue = GetFromViewSpecialized<T>;
         template <>
         constexpr inline bool pullsOneValue<ObjectView> = true;
+        template <Optional T>
+        constexpr inline bool pullsOneValue<T> = pullsOneValue<typename T::value_type>;
 
         template <class T>
         concept SingleStackPull = pullsOneValue<T>;

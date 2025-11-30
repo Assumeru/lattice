@@ -3,10 +3,12 @@
 
 #include "functionref.hpp"
 #include "object.hpp"
+#include "reference.hpp"
 
 #include <cstddef>
 #include <memory>
 #include <span>
+#include <string_view>
 #include <type_traits>
 #include <typeindex>
 #include <typeinfo>
@@ -15,13 +17,15 @@
 namespace lat
 {
     class Stack;
-    class TableReference;
+    class UserType;
 
     using UserDataDestructor = void (*)(Stack&, ObjectView);
 
     class UserTypeRegistry
     {
         std::unordered_map<std::type_index, TableReference> mMetatables;
+        FunctionReference mDefaultIndex;
+        FunctionReference mDefaultNewIndex;
 
         friend struct MainStack;
 
@@ -49,6 +53,8 @@ namespace lat
         bool matches(Stack&, int, std::type_index) const;
 
         void* getUserData(Stack&, int, const std::type_info&) const;
+
+        UserType createUserType(Stack&, std::type_index, UserDataDestructor, std::string_view);
 
     public:
         template <class Value, class T = std::remove_cvref_t<Value>>
@@ -78,6 +84,14 @@ namespace lat
         {
             void* value = getUserData(stack, index, typeid(T));
             return static_cast<T*>(value);
+        }
+
+        template <class T>
+        UserType createUserType(Stack& stack, std::string_view name)
+        {
+            static_assert(
+                std::same_as<std::remove_cvref_t<std::remove_pointer_t<T>>, T>, "User type needs to be unqualified");
+            return createUserType(stack, typeid(T), &destroyUserData<T>, name);
         }
     };
 }

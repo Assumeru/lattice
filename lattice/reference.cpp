@@ -228,4 +228,19 @@ namespace lat
     {
         return l.mReference == r.mReference;
     }
+
+    void pushValue(Stack& stack, const Reference& value)
+    {
+        value.pushTo(stack);
+    }
+
+    void pushValue(Stack& stack, const FunctionReference& value)
+    {
+        value.pushTo(stack);
+    }
+
+    void pushValue(Stack& stack, const TableReference& value)
+    {
+        value.pushTo(stack);
+    }
 }

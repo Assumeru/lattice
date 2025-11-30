@@ -2,11 +2,13 @@
 
 #include <lua.hpp>
 
+#include <format>
 #include <optional>
 #include <type_traits>
 #include <utility>
 
 #include "lua/api.hpp"
+#include "reference.hpp"
 #include "stack.hpp"
 #include "userdata.hpp"
 
@@ -22,12 +24,44 @@ namespace lat
         std::optional<FunctionRef<void(Stack&, lua_Debug&)>> mDebugHook;
         UserTypeRegistry mTypeRegistry;
 
+        [[noreturn]] static int defaultIndex(lua_State* state)
+        {
+            LuaApi api(*state);
+            std::string_view key = api.toString(2);
+            api.pushPositionString(1);
+            std::string_view where = api.toString(-1);
+            api.pushString(std::format("{}cannot read write-only property {}", where, key));
+            api.error();
+        }
+
+        [[noreturn]] static int defaultNewIndex(lua_State* state)
+        {
+            LuaApi api(*state);
+            std::string_view key = api.toString(2);
+            api.pushPositionString(1);
+            std::string_view where = api.toString(-1);
+            api.pushString(std::format("{}cannot write read-only property {}", where, key));
+            api.error();
+        }
+
         MainStack(lua_State* state)
             : mStack(state)
         {
             mStack.protectedCall(
                 [](lua_State* state) {
-                    LuaApi(*state).setGlobalValue(globalName);
+                    LuaApi api(*state);
+                    auto main = static_cast<MainStack*>(api.asUserData(-1));
+                    api.setGlobalValue(globalName);
+                    {
+                        api.pushFunction(&defaultIndex);
+                        int ref = api.createReferenceIn(LUA_REGISTRYINDEX);
+                        main->mTypeRegistry.mDefaultIndex = Reference(*main->mStack.mState, ref);
+                    }
+                    {
+                        api.pushFunction(&defaultNewIndex);
+                        int ref = api.createReferenceIn(LUA_REGISTRYINDEX);
+                        main->mTypeRegistry.mDefaultNewIndex = Reference(*main->mStack.mState, ref);
+                    }
                     return 0;
                 },
                 this);

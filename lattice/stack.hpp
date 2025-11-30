@@ -6,6 +6,7 @@
 #include "function.hpp"
 #include "overload.hpp"
 #include "table.hpp"
+#include "usertype.hpp"
 
 namespace lat
 {
@@ -40,8 +41,16 @@ namespace lat
     {
         if constexpr (detail::isOverload<std::remove_reference_t<T>>)
             return pushFunctionImpl(std::forward<T>(function).toFunction());
+        else if constexpr (detail::StringViewConstructible<T>)
+            return pushFunction(std::string_view(function));
         else
             return pushFunctionImpl(detail::wrapFunction(std::function(function)));
+    }
+
+    template <class T>
+    UserType Stack::newUserType(std::string_view name)
+    {
+        return State::getUserTypeRegistry(*this).createUserType<T>(*this, name);
     }
 }
 

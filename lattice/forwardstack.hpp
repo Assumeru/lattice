@@ -98,7 +98,7 @@ namespace lat
         template <class... Ret>
         auto execute(std::string_view lua, const char* name = nullptr);
 
-        template <class T>
+        template <class T, class... Bases>
         UserType newUserType(std::string_view name);
     };
 }

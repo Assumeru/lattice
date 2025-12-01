@@ -15,6 +15,9 @@ namespace
     {
         int mValue;
     };
+    struct Derived : public Struct
+    {
+    };
     void test()
     {
         lat::State state;
@@ -23,11 +26,12 @@ namespace
             state.loadLibraries();
             state.withStack([&](lat::Stack& stack) {
                 std::cout << "start\n";
-                auto type = stack.newUserType<Struct>("Struct");
+                auto type = stack.newUserType<Derived, Struct>("Struct");
                 type["value2"] = 1;
-                type.setProperty("value", [](const Struct& s) { return s.mValue; }, [](Struct& s, int v) { s.mValue = v; });
+                type.setProperty(
+                    "value", [](const Struct& s) { return s.mValue; }, [](Struct& s, int v) { s.mValue = v; });
                 type[lat::meta::toString] = [](const Struct& s) { return "struct " + std::to_string(s.mValue); };
-                stack["v"] = Struct{ 2 };
+                stack["v"] = Derived{ 2 };
                 stack.execute(R"(
                     print(v, v.value, v.value2)
                     v.value = 3

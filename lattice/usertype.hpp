@@ -27,7 +27,7 @@ namespace lat
         const FunctionReference& mDefaultNewIndex;
 
         UserType(const UserType&) = delete;
-        UserType(UserType&&) = delete;
+        UserType(UserType&&) = default;
 
         UserType(Stack&, const TableReference&, const FunctionReference&, const FunctionReference&);
 

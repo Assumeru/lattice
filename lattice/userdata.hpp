@@ -13,6 +13,7 @@
 #include <typeindex>
 #include <typeinfo>
 #include <unordered_map>
+#include <vector>
 
 namespace lat
 {
@@ -21,9 +22,29 @@ namespace lat
 
     using UserDataDestructor = void (*)(Stack&, ObjectView);
 
+    struct UserTypeData
+    {
+        TableReference mMetatable;
+        std::vector<std::type_index> mDerived;
+
+        UserTypeData(TableReference&& ref)
+            : mMetatable(std::move(ref))
+        {
+        }
+    };
+
+    namespace detail
+    {
+        template <class T>
+        concept UnqualifiedType = std::same_as<std::remove_cvref_t<std::remove_pointer_t<T>>, T>;
+
+        template <class T, class B>
+        concept BaseType = std::derived_from<B, T>;
+    }
+
     class UserTypeRegistry
     {
-        std::unordered_map<std::type_index, TableReference> mMetatables;
+        std::unordered_map<std::type_index, UserTypeData> mMetatables;
         FunctionReference mDefaultIndex;
         FunctionReference mDefaultNewIndex;
 
@@ -43,7 +64,7 @@ namespace lat
             destroyUserData(view, [](void* pointer) { std::destroy_at(static_cast<T*>(pointer)); });
         }
 
-        const TableReference& getMetatable(Stack&, std::type_index, UserDataDestructor);
+        UserTypeData& getUserTypeData(Stack&, std::type_index, UserDataDestructor);
 
         std::span<std::byte> pushUserData(Stack&, std::size_t, const void*, std::type_index, UserDataDestructor);
 
@@ -86,12 +107,13 @@ namespace lat
             return static_cast<T*>(value);
         }
 
-        template <class T>
+        template <detail::UnqualifiedType T, detail::BaseType<T>... Bases>
         UserType createUserType(Stack& stack, std::string_view name)
         {
-            static_assert(
-                std::same_as<std::remove_cvref_t<std::remove_pointer_t<T>>, T>, "User type needs to be unqualified");
-            return createUserType(stack, typeid(T), &destroyUserData<T>, name);
+            const auto& type = typeid(T);
+            UserType created = createUserType(stack, type, &destroyUserData<T>, name);
+            (getUserTypeData(stack, typeid(Bases), &destroyUserData<Bases>).mDerived.emplace_back(type), ...);
+            return created;
         }
     };
 }

@@ -44,6 +44,25 @@ namespace lat
             }
             api.error();
         }
+
+        bool isSameType(Stack& stack, LuaApi& api, const std::vector<std::type_index>& derived,
+            const std::unordered_map<std::type_index, UserTypeData>& mMetatables)
+        {
+            for (const auto& index : derived)
+            {
+                const auto found = mMetatables.find(index);
+                if (found == mMetatables.end())
+                    continue;
+                found->second.mMetatable.pushTo(stack);
+                const bool same = api.equal(-1, -3);
+                api.pop(1);
+                if (same)
+                    return same;
+                if (isSameType(stack, api, found->second.mDerived, mMetatables))
+                    return true;
+            }
+            return false;
+        }
     }
 
     void UserTypeRegistry::clear()
@@ -75,7 +94,7 @@ namespace lat
     std::span<std::byte> UserTypeRegistry::pushUserData(
         Stack& stack, std::size_t size, const void* pointer, std::type_index type, UserDataDestructor destructor)
     {
-        const TableReference& ref = getMetatable(stack, type, destructor);
+        const TableReference& ref = getUserTypeData(stack, type, destructor).mMetatable;
         TableView metatable = ref.pushTo(stack);
         std::span<std::byte> data = stack.pushUserData(size);
         std::memcpy(data.data(), &pointer, pointerSize);
@@ -108,8 +127,7 @@ namespace lat
         }
     }
 
-    const TableReference& UserTypeRegistry::getMetatable(
-        Stack& stack, std::type_index type, UserDataDestructor destructor)
+    UserTypeData& UserTypeRegistry::getUserTypeData(Stack& stack, std::type_index type, UserDataDestructor destructor)
     {
         auto found = mMetatables.find(type);
         if (found == mMetatables.end())
@@ -135,8 +153,8 @@ namespace lat
         LuaApi api = stack.api();
         if (!api.pushMetatable(index))
             return false;
-        found->second.pushTo(stack);
-        bool same = api.rawEqual(-1, -2);
+        found->second.mMetatable.pushTo(stack);
+        bool same = api.rawEqual(-1, -2) || isSameType(stack, api, found->second.mDerived, mMetatables);
         api.pop(2);
         return same;
     }
@@ -152,8 +170,9 @@ namespace lat
         std::optional<ObjectView> metatable = view.pushMetatable();
         if (!metatable)
             throw TypeError(type.name());
-        TableView table = found->second.pushTo(stack);
-        const bool same = stack.api().rawEqual(-1, -2);
+        TableView table = found->second.mMetatable.pushTo(stack);
+        LuaApi api = stack.api();
+        const bool same = api.rawEqual(-1, -2) || isSameType(stack, api, found->second.mDerived, mMetatables);
         if (!same)
         {
             std::string_view name;
@@ -178,8 +197,8 @@ namespace lat
     UserType UserTypeRegistry::createUserType(
         Stack& stack, std::type_index type, UserDataDestructor destructor, std::string_view name)
     {
-        const TableReference& metatable = getMetatable(stack, type, destructor);
-        TableView table = metatable.pushTo(stack);
+        UserTypeData& data = getUserTypeData(stack, type, destructor);
+        TableView table = data.mMetatable.pushTo(stack);
         if (auto currentType = table["__type"].get<std::optional<std::string_view>>())
         {
             stack.pop();
@@ -187,6 +206,6 @@ namespace lat
         }
         table["__type"] = name;
         stack.pop();
-        return UserType(stack, metatable, mDefaultIndex, mDefaultNewIndex);
+        return UserType(stack, data.mMetatable, mDefaultIndex, mDefaultNewIndex);
     }
 }

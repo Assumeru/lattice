@@ -47,10 +47,10 @@ namespace lat
             return pushFunctionImpl(detail::wrapFunction(std::function(function)));
     }
 
-    template <class T>
+    template <class T, class... Bases>
     UserType Stack::newUserType(std::string_view name)
     {
-        return State::getUserTypeRegistry(*this).createUserType<T>(*this, name);
+        return State::getUserTypeRegistry(*this).createUserType<T, Bases...>(*this, name);
     }
 }
 

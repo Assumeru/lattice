@@ -162,4 +162,80 @@ namespace
             EXPECT_TRUE(pointer->mMoved);
         });
     }
+
+    TEST_F(UserDataTest, can_define_bindings)
+    {
+        mState.withStack([](Stack& stack) {
+            auto type = stack.newUserType<TestData>("TestData");
+            type.setProperty(
+                "value", [](const TestData& data) { return data.mValue; },
+                [](TestData& data, int v) { data.mValue = v; });
+            EXPECT_EQ(stack.getTop(), 0);
+            TestData data{ 2 };
+            stack["v"] = &data;
+            stack.execute("v.value = v.value + 1");
+            EXPECT_EQ(data.mValue, 3);
+        });
+    }
+
+    TEST_F(UserDataTest, cannot_redefine_usertype)
+    {
+        mState.withStack([](Stack& stack) {
+            stack.newUserType<TestData>("TestData");
+            EXPECT_ANY_THROW(stack.newUserType<TestData>("DefinitelyNotTestData"));
+        });
+    }
+
+    TEST_F(UserDataTest, can_define_readonly_property)
+    {
+        mState.withStack([](Stack& stack) {
+            auto type = stack.newUserType<TestData>("TestData");
+            type.setReadOnlyProperty("value", [](const TestData& data) { return data.mValue; });
+            TestData data{ 2 };
+            stack["v"] = &data;
+            auto f = stack.pushFunctionReturning<int>("return v.value");
+            EXPECT_EQ(f(), data.mValue);
+            EXPECT_ANY_THROW(stack.execute("v.value = 1"));
+        });
+    }
+
+    TEST_F(UserDataTest, can_define_writeonly_property)
+    {
+        mState.withStack([](Stack& stack) {
+            auto type = stack.newUserType<TestData>("TestData");
+            type.setWriteOnlyProperty("value", [](TestData& data, int v) { data.mValue = v; });
+            TestData data{ 2 };
+            stack["v"] = &data;
+            auto f = stack.pushFunction("v.value = ...");
+            EXPECT_EQ(data.mValue, 2);
+            f(1);
+            EXPECT_EQ(data.mValue, 1);
+            EXPECT_ANY_THROW(stack.execute("local a = v.value"));
+        });
+    }
+
+    TEST_F(UserDataTest, can_define_property)
+    {
+        mState.withStack([](Stack& stack) {
+            auto type = stack.newUserType<TestData>("TestData");
+            type["value"] = 2;
+            TestData data{ 3 };
+            stack["v"] = &data;
+            auto f = stack.pushFunctionReturning<int>("return v.value");
+            EXPECT_EQ(f(), 2);
+        });
+    }
+
+    TEST_F(UserDataTest, can_override_newindex)
+    {
+        mState.withStack([](Stack& stack) {
+            auto type = stack.newUserType<TestData>("TestData");
+            std::map<std::string, int> values;
+            type[meta::newIndex] = [&](TestData&, std::string_view key, int value) { values.emplace(key, value); };
+            stack["v"] = TestData{ 1 };
+            stack.execute("v.a = 1; v.b = 2");
+            EXPECT_EQ(values["a"], 1);
+            EXPECT_EQ(values["b"], 2);
+        });
+    }
 }

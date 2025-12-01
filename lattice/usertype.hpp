@@ -5,6 +5,7 @@
 #include "overload.hpp"
 #include "reference.hpp"
 #include "table.hpp"
+#include "userdata.hpp"
 
 #include <string_view>
 
@@ -96,6 +97,15 @@ namespace lat
             mType.set(mKey, std::forward<T>(value));
         }
     };
+
+    template <detail::UnqualifiedType T, detail::BaseType<T>... Bases>
+    UserType UserTypeRegistry::createUserType(Stack& stack, std::string_view name)
+    {
+        const auto& type = typeid(T);
+        UserType created = createUserType(stack, type, &destroyUserData<T>, name);
+        (getUserTypeData(stack, typeid(Bases), &destroyUserData<Bases>).mDerived.emplace_back(type), ...);
+        return created;
+    }
 }
 
 #endif

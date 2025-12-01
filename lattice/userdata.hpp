@@ -108,13 +108,7 @@ namespace lat
         }
 
         template <detail::UnqualifiedType T, detail::BaseType<T>... Bases>
-        UserType createUserType(Stack& stack, std::string_view name)
-        {
-            const auto& type = typeid(T);
-            UserType created = createUserType(stack, type, &destroyUserData<T>, name);
-            (getUserTypeData(stack, typeid(Bases), &destroyUserData<Bases>).mDerived.emplace_back(type), ...);
-            return created;
-        }
+        UserType createUserType(Stack& stack, std::string_view name);
     };
 }
 

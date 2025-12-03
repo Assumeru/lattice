@@ -299,6 +299,8 @@ namespace
         }
 
         virtual int foo() const { return 4; }
+
+        virtual ~DerivedTestData() = default;
     };
 
     struct DerivedDerivedTestData : public DerivedTestData
@@ -309,6 +311,8 @@ namespace
         }
 
         int foo() const override { return 5; }
+
+        virtual ~DerivedDerivedTestData() = default;
     };
 
     TEST_F(UserDataTest, can_use_base_types)
@@ -337,6 +341,8 @@ namespace
     struct MultipleInheritanceData
     {
         virtual int foo() const { return 3; }
+
+        virtual ~MultipleInheritanceData() = default;
     };
 
     struct MultipleInheritanceTestData : public MultipleInheritanceData, public TestData
@@ -346,6 +352,8 @@ namespace
             , TestData{ v }
         {
         }
+
+        virtual ~MultipleInheritanceTestData() = default;
     };
 
     TEST_F(UserDataTest, can_use_multiple_inheritance)

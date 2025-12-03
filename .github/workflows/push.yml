@@ -1,0 +1,24 @@
+name: Build and test
+
+on:
+- push
+- pull_request
+
+jobs:
+  Ubuntu:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install deps
+      run: sudo apt install liblua5.1-0-dev
+
+    - name: Configure
+      run: cmake -B build -DUSE_LUAJIT=FALSE
+
+    - name: Build
+      run: cmake --build build -- -j$(nproc)
+
+    - name: Run tests
+      run: build/tests/LatticeTests

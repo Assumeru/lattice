@@ -9,6 +9,7 @@
 #include <memory>
 #include <span>
 #include <string_view>
+#include <tuple>
 #include <type_traits>
 #include <typeindex>
 #include <typeinfo>
@@ -22,17 +23,6 @@ namespace lat
 
     using UserDataDestructor = void (*)(Stack&, ObjectView);
 
-    struct UserTypeData
-    {
-        TableReference mMetatable;
-        std::vector<std::type_index> mDerived;
-
-        UserTypeData(TableReference&& ref)
-            : mMetatable(std::move(ref))
-        {
-        }
-    };
-
     namespace detail
     {
         template <class T>
@@ -40,7 +30,26 @@ namespace lat
 
         template <class T, class B>
         concept BaseType = std::derived_from<B, T>;
-    }
+
+        using TypeCaster = void* (*)(void*);
+
+        template <class T, BaseType<T> B>
+        inline void* baseCast(void* pointer)
+        {
+            return static_cast<B*>(static_cast<T*>(pointer));
+        }
+    };
+
+    struct UserTypeData
+    {
+        TableReference mMetatable;
+        std::vector<std::tuple<std::type_index, detail::TypeCaster>> mDerived;
+
+        UserTypeData(TableReference&& ref)
+            : mMetatable(std::move(ref))
+        {
+        }
+    };
 
     class UserTypeRegistry
     {

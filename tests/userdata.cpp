@@ -238,4 +238,82 @@ namespace
             EXPECT_EQ(values["b"], 2);
         });
     }
+
+    struct DerivedTestData : public TestData
+    {
+        explicit DerivedTestData(int v)
+            : TestData{ v }
+        {
+        }
+
+        virtual int foo() const { return 4; }
+    };
+
+    struct DerivedDerivedTestData : public DerivedTestData
+    {
+        explicit DerivedDerivedTestData(int v)
+            : DerivedTestData(v)
+        {
+        }
+
+        int foo() const override { return 5; }
+    };
+
+    TEST_F(UserDataTest, can_use_base_types)
+    {
+        mState.withStack([](Stack& stack) {
+            auto type = stack.newUserType<DerivedDerivedTestData, DerivedTestData, TestData>("DerivedDerivedTestData");
+            type.setReadOnlyProperty("ddvalue", [](const DerivedDerivedTestData& d) { return d.mValue; });
+            type.setReadOnlyProperty("dvalue", [](const DerivedTestData& d) { return d.mValue; });
+            type.setReadOnlyProperty("bvalue", [](const TestData& d) { return d.mValue; });
+            type.setReadOnlyProperty("foo1", [](const DerivedDerivedTestData& d) { return d.foo(); });
+            type.setReadOnlyProperty("foo2", [](const DerivedTestData& d) { return d.foo(); });
+            DerivedDerivedTestData data(12);
+            stack["v"] = &data;
+            EXPECT_EQ(stack.getTop(), 0);
+            auto f = stack.pushFunctionReturning<int, int, int, int, int>(
+                "return v.ddvalue, v.dvalue, v.bvalue, v.foo1, v.foo2");
+            const auto [ddvalue, dvalue, bvalue, foo1, foo2] = f();
+            EXPECT_EQ(ddvalue, data.mValue);
+            EXPECT_EQ(dvalue, data.mValue);
+            EXPECT_EQ(bvalue, data.mValue);
+            EXPECT_EQ(foo1, data.foo());
+            EXPECT_EQ(foo2, data.foo());
+        });
+    }
+
+    struct MultipleInheritanceData
+    {
+        virtual int foo() const { return 3; }
+    };
+
+    struct MultipleInheritanceTestData : public MultipleInheritanceData, public TestData
+    {
+        explicit MultipleInheritanceTestData(int v)
+            : MultipleInheritanceData()
+            , TestData{ v }
+        {
+        }
+    };
+
+    TEST_F(UserDataTest, can_use_multiple_inheritance)
+    {
+        mState.withStack([](Stack& stack) {
+            auto type = stack.newUserType<MultipleInheritanceTestData, MultipleInheritanceData, TestData>(
+                "MultipleInheritanceTestData");
+            type.setReadOnlyProperty("mvalue", [](const MultipleInheritanceTestData& d) { return d.mValue; });
+            type.setReadOnlyProperty("bvalue", [](const TestData& d) { return d.mValue; });
+            type.setReadOnlyProperty("foo1", [](const MultipleInheritanceData& d) { return d.foo(); });
+            type.setReadOnlyProperty("foo2", [](const MultipleInheritanceTestData& d) { return d.foo(); });
+            MultipleInheritanceTestData data(2);
+            stack["v"] = &data;
+            EXPECT_EQ(stack.getTop(), 0);
+            auto f = stack.pushFunctionReturning<int, int, int, int>("return v.mvalue, v.bvalue, v.foo1, v.foo2");
+            const auto [mvalue, bvalue, foo1, foo2] = f();
+            EXPECT_EQ(mvalue, data.mValue);
+            EXPECT_EQ(bvalue, data.mValue);
+            EXPECT_EQ(foo1, data.foo());
+            EXPECT_EQ(foo2, data.foo());
+        });
+    }
 }

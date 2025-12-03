@@ -45,10 +45,11 @@ namespace lat
             api.error();
         }
 
-        bool isSameType(Stack& stack, LuaApi& api, const std::vector<std::type_index>& derived,
+        detail::TypeCaster isSameType(Stack& stack, LuaApi& api,
+            const std::vector<std::tuple<std::type_index, detail::TypeCaster>>& derived,
             const std::unordered_map<std::type_index, UserTypeData>& mMetatables)
         {
-            for (const auto& index : derived)
+            for (const auto& [index, caster] : derived)
             {
                 const auto found = mMetatables.find(index);
                 if (found == mMetatables.end())
@@ -57,11 +58,12 @@ namespace lat
                 const bool same = api.equal(-1, -3);
                 api.pop(1);
                 if (same)
-                    return same;
-                if (isSameType(stack, api, found->second.mDerived, mMetatables))
-                    return true;
+                    return caster;
+                detail::TypeCaster c = isSameType(stack, api, found->second.mDerived, mMetatables);
+                if (c != nullptr)
+                    return c;
             }
-            return false;
+            return nullptr;
         }
     }
 
@@ -172,7 +174,13 @@ namespace lat
             throw TypeError(type.name());
         TableView table = found->second.mMetatable.pushTo(stack);
         LuaApi api = stack.api();
-        const bool same = api.rawEqual(-1, -2) || isSameType(stack, api, found->second.mDerived, mMetatables);
+        detail::TypeCaster caster = nullptr;
+        bool same = api.rawEqual(-1, -2);
+        if (!same)
+        {
+            caster = isSameType(stack, api, found->second.mDerived, mMetatables);
+            same = caster != nullptr;
+        }
         if (!same)
         {
             std::string_view name;
@@ -189,6 +197,8 @@ namespace lat
             throw std::runtime_error("invalid object");
         void* pointer = nullptr;
         std::memcpy(&pointer, data.data(), pointerSize);
+        if (caster != nullptr)
+            pointer = caster(pointer);
         if (pointer == nullptr)
             throw std::runtime_error("invalid object");
         return pointer;

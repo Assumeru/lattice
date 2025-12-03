@@ -103,7 +103,9 @@ namespace lat
     {
         const auto& type = typeid(T);
         UserType created = createUserType(stack, type, &destroyUserData<T>, name);
-        (getUserTypeData(stack, typeid(Bases), &destroyUserData<Bases>).mDerived.emplace_back(type), ...);
+        (getUserTypeData(stack, typeid(Bases), &destroyUserData<Bases>)
+                .mDerived.emplace_back(type, &detail::baseCast<T, Bases>),
+            ...);
         return created;
     }
 }

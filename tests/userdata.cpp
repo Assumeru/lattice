@@ -239,6 +239,58 @@ namespace
         });
     }
 
+    TEST_F(UserDataTest, can_override_math)
+    {
+        mState.withStack([](Stack& stack) {
+            auto type = stack.newUserType<TestData>("TestData");
+            type[meta::add] = [](const TestData& d, int v) { return d.mValue + v * 2; };
+            type[meta::sub] = [](const TestData& d, int v) { return d.mValue - v * 2; };
+            type[meta::mul] = [](const TestData& d, int v) { return d.mValue * v; };
+            type[meta::div] = [](const TestData& d, int v) { return d.mValue / v; };
+            type[meta::mod] = []() { return 42; };
+            type[meta::pow] = []() { return 4; };
+            type[meta::unm] = []() { return -1; };
+            TestData data(2);
+            stack["v"] = &data;
+            {
+                auto f = stack.pushFunctionReturning<int>("return v + 3");
+                EXPECT_EQ(f(), data.mValue + 6);
+                stack.pop();
+            }
+            {
+                auto f = stack.pushFunctionReturning<int>("return v - 4");
+                EXPECT_EQ(f(), data.mValue - 8);
+                stack.pop();
+            }
+            {
+                auto f = stack.pushFunctionReturning<int>("return v * 5");
+                EXPECT_EQ(f(), data.mValue * 5);
+                stack.pop();
+            }
+            {
+                auto f = stack.pushFunctionReturning<int>("return v / 2");
+                EXPECT_EQ(f(), data.mValue / 2);
+                stack.pop();
+            }
+            {
+                auto f = stack.pushFunctionReturning<int>("return v % 2");
+                EXPECT_EQ(f(), 42);
+                stack.pop();
+            }
+            {
+                auto f = stack.pushFunctionReturning<int>("return v ^ 3");
+                EXPECT_EQ(f(), 4);
+                stack.pop();
+            }
+            {
+                auto f = stack.pushFunctionReturning<int>("return -v");
+                EXPECT_EQ(f(), -1);
+                stack.pop();
+            }
+            EXPECT_EQ(stack.getTop(), 0);
+        });
+    }
+
     struct DerivedTestData : public TestData
     {
         explicit DerivedTestData(int v)

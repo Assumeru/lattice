@@ -50,7 +50,7 @@ namespace lat
         {
             static_assert(!detail::IndexedTable<std::remove_cvref_t<R>>, "IndexedTableView's key is likely to dangle");
             return [function = std::move(function)]([[maybe_unused]] Stack& stack) -> int {
-                int argPos = 1;
+                [[maybe_unused]] int argPos = 1;
                 auto argValues = std::tuple<Args...>{ detail::pullFunctionArgument<Args>(stack, argPos)... };
                 if constexpr (std::is_void_v<R>)
                 {
@@ -114,7 +114,7 @@ namespace lat
         static Wrapped wrap(std::function<R(Args...)> function)
         {
             return { []([[maybe_unused]] Stack& stack) -> bool {
-                        int pos = 1;
+                        [[maybe_unused]] int pos = 1;
                         return (true && ... && matches<Args>(stack, pos));
                     },
                 detail::wrapFunction(std::move(function)) };

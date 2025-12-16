@@ -15,6 +15,20 @@ namespace lat
     class FunctionReference;
     class TableView;
 
+    class ByteCode
+    {
+        std::string mCode;
+        friend class FunctionView;
+
+        ByteCode() = default;
+
+    public:
+        ByteCode(const ByteCode&) = default;
+        ByteCode(ByteCode&&) = default;
+
+        std::string_view get() const { return mCode; }
+    };
+
     class FunctionView
     {
         Stack& mStack;
@@ -112,6 +126,8 @@ namespace lat
         operator ObjectView() noexcept { return ObjectView(mStack, mIndex); }
 
         FunctionReference store();
+
+        ByteCode dump();
 
         bool setEnvironment(TableView& environment);
         void setMetatable(TableView& metatable);

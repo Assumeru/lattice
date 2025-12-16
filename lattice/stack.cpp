@@ -106,6 +106,24 @@ namespace
             raiseLuaError(api, "unknown error");
         }
     }
+
+    int loadFunction(lat::LuaApi lua, std::string_view script, const char* name) {
+        ensure(lua, 1);
+        if (name == nullptr)
+            name = "";
+        lat::LuaStatus status = lua.loadFunction(script, name);
+        switch (status)
+        {
+            case lat::LuaStatus::SyntaxError:
+                throwLuaError(lua, "syntax error");
+            case lat::LuaStatus::MemoryError:
+                throwLuaError(lua, "out of memory");
+            case lat::LuaStatus::Ok:
+                return lua.getStackSize();
+            default:
+                throw std::logic_error("invalid state");
+        }
+    }
 }
 
 namespace lat
@@ -337,22 +355,12 @@ namespace lat
     {
         if (script.starts_with(LUA_SIGNATURE[0]))
             throw std::invalid_argument("argument cannot be bytecode");
-        LuaApi lua = api();
-        ::ensure(lua, 1);
-        if (name == nullptr)
-            name = "";
-        LuaStatus status = lua.loadFunction(script, name);
-        switch (status)
-        {
-            case LuaStatus::SyntaxError:
-                throwLuaError(lua, "syntax error");
-            case LuaStatus::MemoryError:
-                throwLuaError(lua, "out of memory");
-            case LuaStatus::Ok:
-                return FunctionView(*this, lua.getStackSize());
-            default:
-                throw std::logic_error("invalid state");
-        }
+        return FunctionView(*this, loadFunction(api(), script, name));
+    }
+
+    FunctionView Stack::pushFunction(const ByteCode& code, const char* name)
+    {
+        return FunctionView(*this, loadFunction(api(), code.get(), name));
     }
 
     FunctionView Stack::pushFunctionImpl(std::function<int(Stack&)> function)

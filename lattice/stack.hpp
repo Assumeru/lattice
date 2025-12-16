@@ -22,6 +22,12 @@ namespace lat
     }
 
     template <class... Ret>
+    auto Stack::pushFunctionReturning(const ByteCode& code, const char* name)
+    {
+        return pushFunction(code, name).returning<Ret...>();
+    }
+
+    template <class... Ret>
     auto Stack::execute(std::string_view lua, const char* name)
     {
         auto loaded = pushFunctionReturning<Ret...>(lua, name);

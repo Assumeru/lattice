@@ -232,4 +232,16 @@ namespace
             EXPECT_EQ(stack.getTop(), 1);
         });
     }
+
+    TEST_F(FunctionTest, can_dump_functions)
+    {
+        mState.withStack([](Stack& stack) {
+            FunctionView f = stack.pushFunction("return 1");
+            EXPECT_EQ(f.invoke<int>(), 1);
+            ByteCode code = f.dump();
+            stack.pop();
+            auto loaded = stack.pushFunctionReturning<int>(code);
+            EXPECT_EQ(loaded(), 1);
+        });
+    }
 }

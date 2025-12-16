@@ -13,6 +13,7 @@ struct lua_State;
 
 namespace lat
 {
+    class ByteCode;
     class FunctionView;
     class LuaApi;
     class ObjectView;
@@ -88,6 +89,9 @@ namespace lat
         FunctionView pushFunction(std::string_view lua, const char* name = nullptr);
         template <class... Ret>
         auto pushFunctionReturning(std::string_view lua, const char* name = nullptr);
+        FunctionView pushFunction(const ByteCode& code, const char* name = nullptr);
+        template <class... Ret>
+        auto pushFunctionReturning(const ByteCode& code, const char* name = nullptr);
         template <class T>
         FunctionView pushFunction(T&&);
         ObjectView pushLightUserData(void*);

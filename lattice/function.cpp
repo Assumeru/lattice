@@ -44,4 +44,23 @@ namespace lat
     {
         return ObjectView(*this).pushMetatable();
     }
+
+    namespace
+    {
+        int dumpFunction(lua_State*, const void* buffer, std::size_t size, void* output)
+        {
+            std::string& byteCode = *static_cast<std::string*>(output);
+            byteCode.append(static_cast<const char*>(buffer), size);
+            return 0;
+        }
+    }
+
+    ByteCode FunctionView::dump()
+    {
+        ObjectView(*this).pushTo(mStack);
+        ByteCode code;
+        mStack.api().dumpFunction(&dumpFunction, &code.mCode);
+        mStack.pop();
+        return code;
+    }
 }

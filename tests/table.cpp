@@ -52,6 +52,26 @@ namespace
         });
     }
 
+    TEST_F(TableTest, can_get_nested_optional)
+    {
+        mState.withStack([](Stack& stack) {
+            TableView t1 = stack.pushTable();
+            TableView t2 = stack.pushTable();
+            t1["a"] = t2;
+            t2["b"] = 1;
+            EXPECT_EQ(stack.getTop(), 2);
+            {
+                auto value = t1.get<std::optional<int>>("a", "b");
+                EXPECT_EQ(1, value);
+            }
+            {
+                auto value = t1.get<std::optional<std::string_view>>("a", "b");
+                EXPECT_FALSE(value.has_value());
+            }
+            EXPECT_EQ(stack.getTop(), 2);
+        });
+    }
+
     struct DoublePush
     {
     };

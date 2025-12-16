@@ -198,4 +198,38 @@ namespace
                 )");
         });
     }
+
+    TEST_F(FunctionTest, can_return_optionals)
+    {
+        mState.withStack([](Stack& stack) {
+            auto function = stack.pushFunctionReturning<std::optional<int>, std::optional<int>>("return ...");
+            EXPECT_EQ(stack.getTop(), 1);
+            {
+                const auto [a, b] = function();
+                EXPECT_FALSE(a.has_value());
+                EXPECT_FALSE(b.has_value());
+            }
+            {
+                const auto [a, b] = function(1, 2);
+                EXPECT_EQ(a, 1);
+                EXPECT_EQ(b, 2);
+            }
+            {
+                const auto [a, b] = function(nil, 2);
+                EXPECT_FALSE(a.has_value());
+                EXPECT_EQ(b, 2);
+            }
+            {
+                const auto [a, b] = function("a", 2);
+                EXPECT_FALSE(a.has_value());
+                EXPECT_EQ(b, 2);
+            }
+            {
+                const auto [a, b] = function(1, "b");
+                EXPECT_EQ(a, 1);
+                EXPECT_FALSE(b.has_value());
+            }
+            EXPECT_EQ(stack.getTop(), 1);
+        });
+    }
 }

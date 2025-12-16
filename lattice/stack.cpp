@@ -18,7 +18,7 @@ namespace
 {
     [[noreturn]] void throwLuaError(lat::LuaApi& lua, const char* fallback)
     {
-        if (!lua.isNone(-1) && lua.isString(-1))
+        if (lua.getType(-1) == lat::LuaType::String)
         {
             // Per the spec this function can throw to support converting non-string values to string. Neither
             // Lua nor LuaJIT throw if the value is already a string, making this safe outside of a protected
@@ -250,12 +250,12 @@ namespace lat
 
     bool Stack::isNumber(int index) const
     {
-        return api().isNumber(index);
+        return api().getType(index) == LuaType::Number;
     }
 
     bool Stack::isString(int index) const
     {
-        return api().isString(index);
+        return api().getType(index) == LuaType::String;
     }
 
     bool Stack::isTable(int index) const

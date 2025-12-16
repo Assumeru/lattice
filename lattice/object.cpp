@@ -82,7 +82,7 @@ namespace lat
     {
         LuaApi api = mStack.api();
         lua_Integer value = api.asInteger(mIndex);
-        if (value == 0 && !api.isNumber(mIndex))
+        if (value == 0 && api.getType(mIndex) != LuaType::Number)
             throw TypeError("integer");
         return value;
     }
@@ -91,7 +91,7 @@ namespace lat
     {
         LuaApi api = mStack.api();
         lua_Number value = api.asNumber(mIndex);
-        if (value == 0. && !api.isNumber(mIndex))
+        if (value == 0. && api.getType(mIndex) != LuaType::Number)
             throw TypeError("number");
         return value;
     }
@@ -99,7 +99,7 @@ namespace lat
     std::string_view ObjectView::asString() const
     {
         LuaApi api = mStack.api();
-        if (api.isString(mIndex))
+        if (api.getType(mIndex) == LuaType::String)
             return api.toString(mIndex);
         throw TypeError("string");
     }

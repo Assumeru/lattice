@@ -9,6 +9,7 @@ namespace lat
 {
     enum class LuaType : int
     {
+        None = LUA_TNONE,
         Nil = LUA_TNIL,
         Number = LUA_TNUMBER,
         Boolean = LUA_TBOOLEAN,

@@ -76,4 +76,16 @@ namespace
             EXPECT_TRUE(view.is<double>());
         });
     }
+
+    TEST_F(ConversionTest, int_is_not_string)
+    {
+        mState.withStack([](Stack& stack) {
+            int value = 1;
+            ObjectView view = stack.push(value);
+            EXPECT_FALSE(stack.isString(1));
+            EXPECT_TRUE(view.is<int>());
+            EXPECT_FALSE(view.is<std::string_view>());
+            EXPECT_EQ(view.as<int>(), 1);
+        });
+    }
 }

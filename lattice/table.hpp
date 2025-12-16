@@ -69,7 +69,7 @@ namespace lat
             checkSingleValue(prev);
         }
 
-        template <detail::SingleStackPull Value, class... Path>
+        template <bool Traverse, detail::SingleStackPull Value, class... Path>
         Value getImpl(Path&&... path)
         {
             const int top = mStack.getTop();
@@ -77,13 +77,25 @@ namespace lat
             {
                 std::size_t i = 0;
                 int table = mIndex;
-                (
-                    [&] {
-                        pushSingleObject(std::forward<Path>(path));
-                        table = pushTableValue(table, i > 0);
-                        ++i;
-                    }(),
-                    ...);
+                [[maybe_unused]] const bool traversed = (true && ... && [&] {
+                    if constexpr (Traverse)
+                    {
+                        if (i > 0 && !mStack.isTable(table))
+                            return false;
+                    }
+                    pushSingleObject(std::forward<Path>(path));
+                    table = pushTableValue(table, i > 0);
+                    ++i;
+                    return true;
+                }());
+                if constexpr (Traverse)
+                {
+                    if (!traversed)
+                    {
+                        cleanUp(top);
+                        return {};
+                    }
+                }
                 return detail::pullFromStack<Value>(mStack, table);
             }
             catch (...)
@@ -143,7 +155,13 @@ namespace lat
         template <detail::SingleStackPull Value = ObjectView, class Key, class... Path>
         Value get(Key&& key, Path&&... args)
         {
-            return getImpl<Value>(std::forward<Key>(key), std::forward<Path>(args)...);
+            return getImpl<false, Value>(std::forward<Key>(key), std::forward<Path>(args)...);
+        }
+
+        template <detail::SingleStackPull Value = ObjectView, class Key, class... Path>
+        std::optional<Value> traverseGet(Key&& key, Path&&... args)
+        {
+            return getImpl<true, std::optional<Value>>(std::forward<Key>(key), std::forward<Path>(args)...);
         }
 
         template <class Value, class Key, class... Path>

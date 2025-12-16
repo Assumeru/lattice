@@ -130,4 +130,40 @@ namespace
             EXPECT_EQ(stack.getTop(), 1);
         });
     }
+
+    TEST_F(TableTest, can_traverse_get)
+    {
+        mState.withStack([](Stack& stack) {
+            TableView t1 = stack.pushTable();
+            TableView t2 = stack.pushTable();
+            t1["a"] = t2;
+            t2["b"] = 1;
+            t1["c"] = 2;
+            EXPECT_EQ(stack.getTop(), 2);
+            {
+                auto value = t1.traverseGet<int>("a", "b");
+                EXPECT_EQ(1, value);
+            }
+            {
+                auto value = t2.traverseGet<int>("b");
+                EXPECT_EQ(1, value);
+            }
+            {
+                auto value = t1.traverseGet<std::string_view>("a", "b");
+                EXPECT_FALSE(value.has_value());
+            }
+            {
+                auto value = t1.traverseGet<int>("c", "d");
+                EXPECT_FALSE(value.has_value());
+            }
+            {
+                auto value = t1.traverseGet<int>("a", "c");
+                EXPECT_FALSE(value.has_value());
+            }
+            EXPECT_EQ(stack.getTop(), 2);
+            stack.pop();
+            stack.push(1);
+            EXPECT_ANY_THROW(t2.traverseGet<int>("b"));
+        });
+    }
 }

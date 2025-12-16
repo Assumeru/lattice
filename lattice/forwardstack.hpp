@@ -59,6 +59,7 @@ namespace lat
 
         void collectGarbage();
         bool collectGarbage(int size);
+        void* getAllocatorData() const;
 
         int makeAbsolute(int index) const;
         int getTop() const;

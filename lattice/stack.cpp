@@ -107,7 +107,8 @@ namespace
         }
     }
 
-    int loadFunction(lat::LuaApi lua, std::string_view script, const char* name) {
+    int loadFunction(lat::LuaApi lua, std::string_view script, const char* name)
+    {
         ensure(lua, 1);
         if (name == nullptr)
             name = "";
@@ -212,6 +213,13 @@ namespace lat
     bool Stack::collectGarbage(int size)
     {
         return api().runGarbageCollectionStep(size);
+    }
+
+    void* Stack::getAllocatorData() const
+    {
+        void* data;
+        api().getAllocator(&data);
+        return data;
     }
 
     int Stack::makeAbsolute(int index) const

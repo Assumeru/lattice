@@ -63,6 +63,8 @@ namespace lat
 
         void loadLibraries(std::span<const Library> = {}) const;
 
+        std::size_t getMemoryUsed() const;
+
         static UserTypeRegistry& getUserTypeRegistry(Stack&);
     };
 }

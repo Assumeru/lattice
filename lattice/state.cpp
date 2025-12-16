@@ -230,4 +230,12 @@ namespace lat
             },
             &libraries);
     }
+
+    std::size_t State::getMemoryUsed() const
+    {
+        LuaApi api = mState->mStack.api();
+        std::size_t bytes = static_cast<std::size_t>(api.getMemoryUseKiB()) * 1024;
+        bytes += api.getMemoryUseRemainderB();
+        return bytes;
+    }
 }

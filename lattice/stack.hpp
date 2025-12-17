@@ -10,6 +10,14 @@
 
 namespace lat
 {
+    template <class Path>
+    template <class Ret, class... Args>
+    Ret IndexedTableView<Path>::invoke(Args&&... args)
+    {
+        FunctionView function = *this;
+        return function.invokeImpl<false, Ret, Args...>(std::forward<Args>(args)...);
+    }
+
     auto Stack::operator[](auto key)
     {
         return globals()[key];

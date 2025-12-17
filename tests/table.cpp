@@ -182,4 +182,14 @@ namespace
             EXPECT_EQ(stack.getTop(), 1);
         });
     }
+
+    TEST_F(TableTest, can_directly_invoke_function)
+    {
+        mState.withStack([](Stack& stack) {
+            TableView table = stack.pushTable();
+            table["a"] = [](int a) { return a + 1; };
+            EXPECT_EQ(table["a"].invoke<int>(1), 2);
+            EXPECT_EQ(stack.getTop(), 1);
+        });
+    }
 }

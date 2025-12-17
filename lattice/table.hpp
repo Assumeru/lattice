@@ -249,6 +249,9 @@ namespace lat
         {
             set(std::forward<Value>(value));
         }
+
+        template <class Ret = void, class... Args>
+        Ret invoke(Args&&... args);
     };
 
     template <class Key>

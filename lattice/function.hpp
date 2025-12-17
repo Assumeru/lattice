@@ -13,6 +13,8 @@ namespace lat
     class ReturningFunctionView;
 
     class FunctionReference;
+    template <class Path>
+    class IndexedTableView;
     class TableView;
 
     class ByteCode
@@ -45,6 +47,8 @@ namespace lat
 
         friend class ObjectView;
         friend class Stack;
+        template <class>
+        friend class IndexedTableView;
 
         template <class>
         constexpr static bool allSpecialized = false;

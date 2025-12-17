@@ -39,6 +39,10 @@ namespace lat
         // getmetatable blocker
         constexpr inline std::string_view metatable = "__metatable";
         constexpr inline std::string_view toString = "__tostring";
+
+        // Lua 5.2
+        constexpr inline std::string_view pairs = "__pairs";
+        constexpr inline std::string_view ipairs = "__ipairs";
     }
 
     template <class Path>

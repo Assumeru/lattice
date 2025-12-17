@@ -190,7 +190,7 @@ namespace lat
         constexpr inline bool pullsOneValue<T> = pullsOneValue<typename T::value_type>;
 
         template <class T>
-        concept SingleStackPull = pullsOneValue<T>;
+        concept SingleStackPull = pullsOneValue<T> || !PullSpecialized<T>;
 
         template <class Value, bool light = false, class T = std::remove_cvref_t<Value>,
             class V = std::remove_volatile_t<Value>>

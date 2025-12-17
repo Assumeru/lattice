@@ -166,4 +166,20 @@ namespace
             EXPECT_ANY_THROW(t2.traverseGet<int>("b"));
         });
     }
+
+    struct TestData
+    {
+        int mValue;
+    };
+
+    TEST_F(TableTest, can_pull_userdata)
+    {
+        mState.withStack([](Stack& stack) {
+            TableView table = stack.pushTable();
+            table["a"] = TestData(2);
+            TestData a = table["a"];
+            EXPECT_EQ(a.mValue, 2);
+            EXPECT_EQ(stack.getTop(), 1);
+        });
+    }
 }

@@ -207,6 +207,11 @@ namespace lat
 
         LuaType getType(int index) const noexcept { return static_cast<LuaType>(lua_type(mState, index)); }
 
+        std::string_view getTypeName(LuaType type) const noexcept
+        {
+            return lua_typename(mState, static_cast<int>(type));
+        }
+
         void moveValuesTo(const LuaApi& other, int num) const noexcept { lua_xmove(mState, other.mState, num); }
 
         [[nodiscard]] int yield(int numResults) const noexcept { return lua_yield(mState, numResults); }

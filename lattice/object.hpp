@@ -50,6 +50,7 @@ namespace lat
         bool isUserData() const;
         bool isLightUserData() const;
         LuaType getType() const;
+        std::string_view getTypeName() const;
 
         Nil asNil() const;
         bool asBool() const;

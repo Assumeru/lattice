@@ -62,6 +62,11 @@ namespace lat
         return mStack.api().getType(mIndex);
     }
 
+    std::string_view ObjectView::getTypeName() const
+    {
+        return mStack.api().getTypeName(getType());
+    }
+
     Nil ObjectView::asNil() const
     {
         if (!isNil())

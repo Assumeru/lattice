@@ -12,6 +12,7 @@
 #include <stdexcept>
 #include <string_view>
 #include <type_traits>
+#include <variant>
 #include <vector>
 
 namespace lat
@@ -45,6 +46,14 @@ namespace lat
         template <class T>
         concept Tuple = isTuple<T>;
 
+        template <class>
+        constexpr inline bool isVariant = false;
+        template <class... Types>
+        constexpr inline bool isVariant<std::variant<Types...>> = true;
+
+        template <class T>
+        concept Variant = isVariant<T>;
+
         template <class T>
         concept ReferenceWrapper = !std::is_same_v<T, std::unwrap_reference_t<T>>;
 
@@ -55,7 +64,12 @@ namespace lat
         concept Function = requires(T&& value) { std::function(std::forward<T>(value)); };
 
         template <class T>
-        concept String = std::is_constructible_v<T, std::string_view> && !Optional<T>;
+        concept String = std::is_same_v<T, std::string_view> || std::is_same_v<T, std::string>;
+
+        template <class Value, class T = std::remove_cvref_t<Value>>
+        inline Value pullFromStack(Stack&, int&);
+        template <class Value, class T = std::remove_cvref_t<Value>>
+        inline bool stackValueIs(Stack&, int&);
 
         inline void pushValue(Stack& stack, Nil)
         {
@@ -105,7 +119,7 @@ namespace lat
         template <Optional T>
         inline bool isValue(Stack& stack, int& pos, Type<T>)
         {
-            if (stack.getTop() > pos)
+            if (stack.getTop() < pos)
                 return true;
             else if (stack.isNil(pos))
             {
@@ -114,6 +128,16 @@ namespace lat
             }
             using OptT = typename T::value_type;
             return stackValueIs<OptT>(stack, pos);
+        }
+
+        template <class... Types>
+        inline bool isValue(Stack& stack, int& pos, Type<std::variant<Types...>>)
+        {
+            const int initial = pos;
+            return (false || ... || [&] {
+                pos = initial;
+                return stackValueIs<Types>(stack, pos);
+            }());
         }
 
         inline Nil getValue(ObjectView view, Type<Nil>)
@@ -161,6 +185,48 @@ namespace lat
             return values;
         }
 
+        template <Optional T>
+        inline T pullValue(Stack& stack, int& pos, Type<T>)
+        {
+            if (stack.getTop() < pos)
+                return {};
+            else if (stack.isNil(pos))
+            {
+                stack.remove(pos);
+                return {};
+            }
+            const int initial = pos;
+            using OptT = typename T::value_type;
+            if (!stackValueIs<OptT>(stack, pos))
+            {
+                while (pos > initial)
+                {
+                    stack.remove(initial);
+                    --pos;
+                }
+                return {};
+            }
+            pos = initial;
+            return pullFromStack<OptT>(stack, pos);
+        }
+
+        template <class... Types>
+        inline std::variant<Types...> pullValue(Stack& stack, int& pos, Type<std::variant<Types...>>)
+        {
+            constexpr std::size_t size = sizeof...(Types);
+            static_assert(size != 0);
+            std::variant<Types...> value;
+            std::size_t i = 0;
+            (true && ... && [&] {
+                int p = pos;
+                if (i++ < size - 1 && !stackValueIs<Types>(stack, p))
+                    return true;
+                value.template emplace<Types>(pullFromStack<Types>(stack, pos));
+                return false;
+            }());
+            return value;
+        }
+
         template <class T>
         concept PushSpecialized = requires(Stack& stack, T&& value) { pushValue(stack, std::forward<T>(value)); };
         template <class T>
@@ -188,6 +254,8 @@ namespace lat
         constexpr inline bool pullsOneValue<ObjectView> = true;
         template <Optional T>
         constexpr inline bool pullsOneValue<T> = pullsOneValue<typename T::value_type>;
+        template <class... Types>
+        constexpr inline bool pullsOneValue<std::variant<Types...>> = (true && ... && pullsOneValue<Types>);
 
         template <class T>
         concept SingleStackPull = pullsOneValue<T> || !PullSpecialized<T>;
@@ -230,6 +298,10 @@ namespace lat
                 else
                     stack.pushNil();
             }
+            else if constexpr (Variant<T>)
+            {
+                std::visit([&](auto&& v) { pushToStack(stack, v); }, std::forward<V>(value));
+            }
             else if constexpr (ReferenceWrapper<T>)
             {
                 using RefT = typename T::type;
@@ -271,7 +343,7 @@ namespace lat
             }
         }
 
-        template <class Value, class T = std::remove_cvref_t<Value>>
+        template <class Value, class T>
         inline bool stackValueIs(Stack& stack, int& pos)
         {
             if constexpr (IsSpecialized<T>)
@@ -289,24 +361,7 @@ namespace lat
             }
         }
 
-        template <Optional T>
-        inline T pullValue(Stack& stack, int& pos, Type<T>)
-        {
-            if (stack.getTop() > pos)
-                return {};
-            else if (stack.isNil(pos))
-            {
-                stack.remove(pos);
-                return {};
-            }
-            int p = pos;
-            using OptT = typename T::value_type;
-            if (!stackValueIs<OptT>(stack, p))
-                return {};
-            return pullFromStack<OptT>(stack, pos);
-        }
-
-        template <class Value, class T = std::remove_cvref_t<Value>>
+        template <class Value, class T>
         inline Value pullFromStack(Stack& stack, int& pos)
         {
             if constexpr (PullSpecialized<T>)

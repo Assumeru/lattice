@@ -88,4 +88,45 @@ namespace
             EXPECT_EQ(view.as<int>(), 1);
         });
     }
+
+    TEST_F(ConversionTest, can_push_and_pull_variants)
+    {
+        using V = std::variant<std::string_view, int>;
+        mState.withStack([](Stack& stack) {
+            {
+                V value = 1;
+                lat::ObjectView view = stack.push(value);
+                EXPECT_TRUE(view.isNumber());
+                EXPECT_FALSE(view.isString());
+                EXPECT_TRUE(view.is<V>());
+                stack.pop();
+            }
+            {
+                V value = "a";
+                lat::ObjectView view = stack.push(value);
+                EXPECT_FALSE(view.isNumber());
+                EXPECT_TRUE(view.isString());
+                EXPECT_TRUE(view.is<V>());
+                stack.pop();
+            }
+            lat::FunctionView function = stack.pushFunction([](bool string) -> V {
+                if (string)
+                    return "abc";
+                return 123;
+            });
+            EXPECT_EQ(1, stack.getTop());
+            EXPECT_EQ("abc", function.invoke<std::string_view>(true));
+            EXPECT_EQ(123, function.invoke<int>(false));
+            static_assert(detail::PullSpecialized<V>);
+            {
+                V value = function.invoke<V>(true);
+                EXPECT_EQ(std::get<std::string_view>(value), "abc");
+            }
+            {
+                V value = function.invoke<V>(false);
+                EXPECT_EQ(std::get<int>(value), 123);
+            }
+            EXPECT_EQ(1, stack.getTop());
+        });
+    }
 }

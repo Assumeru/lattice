@@ -58,7 +58,7 @@ namespace lat
         {
             // Use braced initializer list to force left-to-right evaluation
             auto values = std::tuple<Types...>{ detail::pullFromStack<Types>(mStack, pos)... };
-            cleanUp(pos);
+            cleanUp(pos - 1);
             return values;
         }
 
@@ -99,7 +99,7 @@ namespace lat
                     else
                     {
                         Ret value = detail::pullFromStack<Ret>(mStack, pos);
-                        cleanUp(pos);
+                        cleanUp(pos - 1);
                         return value;
                     }
                 }

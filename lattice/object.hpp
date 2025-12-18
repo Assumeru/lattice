@@ -66,7 +66,7 @@ namespace lat
 
         bool setEnvironment(TableView& environment);
         void setMetatable(TableView& metatable);
-        std::optional<ObjectView> pushMetatable();
+        std::optional<TableView> pushMetatable();
 
         Reference store();
 

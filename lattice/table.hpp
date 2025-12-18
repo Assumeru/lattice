@@ -154,7 +154,7 @@ namespace lat
 
         bool setEnvironment(TableView& environment);
         void setMetatable(TableView& metatable);
-        std::optional<ObjectView> pushMetatable();
+        std::optional<TableView> pushMetatable();
 
         template <detail::SingleStackPull Value = ObjectView, class Key, class... Path>
         Value get(Key&& key, Path&&... args)

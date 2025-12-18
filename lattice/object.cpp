@@ -173,11 +173,11 @@ namespace lat
         mStack.api().setMetatable(mIndex);
     }
 
-    std::optional<ObjectView> ObjectView::pushMetatable()
+    std::optional<TableView> ObjectView::pushMetatable()
     {
         mStack.ensure(1);
         if (mStack.api().pushMetatable(mIndex))
-            return mStack.getObject(-1);
+            return mStack.getObject(-1).asTable();
         return {};
     }
 

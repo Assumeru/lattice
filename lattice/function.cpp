@@ -40,7 +40,7 @@ namespace lat
         ObjectView(*this).setMetatable(metatable);
     }
 
-    std::optional<ObjectView> FunctionView::pushMetatable()
+    std::optional<TableView> FunctionView::pushMetatable()
     {
         return ObjectView(*this).pushMetatable();
     }

@@ -169,7 +169,7 @@ namespace lat
         const auto found = mMetatables.find(type);
         if (found == mMetatables.end())
             throw TypeError(type.name());
-        std::optional<ObjectView> metatable = view.pushMetatable();
+        std::optional<TableView> metatable = view.pushMetatable();
         if (!metatable)
             throw TypeError(type.name());
         TableView table = found->second.mMetatable.pushTo(stack);

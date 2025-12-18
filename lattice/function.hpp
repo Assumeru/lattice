@@ -135,7 +135,7 @@ namespace lat
 
         bool setEnvironment(TableView& environment);
         void setMetatable(TableView& metatable);
-        std::optional<ObjectView> pushMetatable();
+        std::optional<TableView> pushMetatable();
     };
 
     // Workaround for GCC < 14 https://gcc.gnu.org/bugzilla/show_bug.cgi?id=71954

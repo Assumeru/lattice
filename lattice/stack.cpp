@@ -289,6 +289,21 @@ namespace lat
         return api().isTable(index);
     }
 
+    bool Stack::isTableLike(int index)
+    {
+        LuaApi lua = api();
+        if (lua.isTable(index))
+            return true;
+        ::ensure(lua, 2);
+        if (!lua.pushMetatable(index))
+            return false;
+        lua.pushString(meta::index);
+        lua.pushTableValue(-2);
+        const bool hasMetaIndex = lua.isFunction(-1);
+        lua.pop(2);
+        return hasMetaIndex;
+    }
+
     bool Stack::isFunction(int index) const
     {
         return api().isFunction(index);

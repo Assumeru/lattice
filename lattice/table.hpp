@@ -49,12 +49,13 @@ namespace lat
     class IndexedTableView;
     class TableViewIterator;
 
-    class TableView
+    class TableLikeViewBase
     {
+    protected:
         Stack& mStack;
         int mIndex;
 
-        TableView(Stack& stack, int index)
+        TableLikeViewBase(Stack& stack, int index)
             : mStack(stack)
             , mIndex(index)
         {
@@ -84,7 +85,7 @@ namespace lat
                 [[maybe_unused]] const bool traversed = (true && ... && [&] {
                     if constexpr (Traverse)
                     {
-                        if (i > 0 && !mStack.isTable(table))
+                        if (i > 0 && !mStack.isTableLike(table))
                             return false;
                     }
                     pushSingleObject(std::forward<Path>(path));
@@ -143,14 +144,9 @@ namespace lat
 
         template <class>
         friend class IndexedTableView;
-        friend class ObjectView;
-        friend class Stack;
-        friend class TableViewIterator;
 
     public:
         operator ObjectView() noexcept { return ObjectView(mStack, mIndex); }
-
-        TableReference store();
 
         bool setEnvironment(TableView& environment);
         void setMetatable(TableView& metatable);
@@ -176,6 +172,29 @@ namespace lat
 
         template <class Key>
         auto operator[](Key&& key);
+    };
+
+    class TableLikeView : public TableLikeViewBase
+    {
+        friend class ObjectView;
+        friend class Stack;
+
+        using TableLikeViewBase::TableLikeViewBase;
+
+    public:
+        Reference store();
+    };
+
+    class TableView : public TableLikeViewBase
+    {
+        friend class ObjectView;
+        friend class Stack;
+        friend class TableViewIterator;
+
+        using TableLikeViewBase::TableLikeViewBase;
+
+    public:
+        TableReference store();
 
         ObjectView getRaw(int);
         void setRaw(int, ObjectView&);
@@ -196,10 +215,10 @@ namespace lat
     template <class Path>
     class IndexedTableView
     {
-        TableView mTable;
+        TableLikeViewBase mTable;
         Path mPath;
 
-        IndexedTableView(const TableView& table, Path&& path)
+        IndexedTableView(const TableLikeViewBase& table, Path&& path)
             : mTable(table)
             , mPath(std::forward<Path>(path))
         {
@@ -207,7 +226,7 @@ namespace lat
 
         void pop() { mTable.mStack.pop(); }
 
-        friend class TableView;
+        friend class TableLikeViewBase;
         template <class>
         friend class IndexedTableView;
         template <detail::IndexedTable T>
@@ -255,7 +274,7 @@ namespace lat
     };
 
     template <class Key>
-    auto TableView::operator[](Key&& key)
+    auto TableLikeViewBase::operator[](Key&& key)
     {
         return IndexedTableView(*this, std::make_tuple<Key>(std::forward<Key>(key)));
     }
@@ -282,10 +301,27 @@ namespace lat
         return view.asTable();
     }
 
+    inline TableLikeView pullValue(Stack& stack, int& pos, Type<TableLikeView>)
+    {
+        return stack.getObject(pos++).asTableLike();
+    }
+
+    inline bool isValue(Stack& stack, int& pos, Type<TableLikeView>)
+    {
+        return stack.isTableLike(pos++);
+    }
+
+    inline TableLikeView getValue(ObjectView view, Type<TableLikeView>)
+    {
+        return view.asTableLike();
+    }
+
     namespace detail
     {
         template <>
         constexpr inline bool pullsOneValue<TableView> = true;
+        template <>
+        constexpr inline bool pullsOneValue<TableLikeView> = true;
     }
 
     class TableViewIterator

@@ -8,24 +8,43 @@
 
 namespace lat
 {
-    int TableView::pushTableValue(int table, bool pop)
+    namespace
     {
+        bool hasNewIndex(LuaApi& lua)
+        {
+            lua.pushString(meta::newIndex);
+            lua.pushTableValue(-2);
+            const bool hasMetaNewIndex = lua.isFunction(-1);
+            lua.pop(2);
+            return hasMetaNewIndex;
+        }
+    }
+
+    int TableLikeViewBase::pushTableValue(int table, bool pop)
+    {
+        if (!mStack.isTableLike(table))
+            throw TypeError("table");
         mStack.ensure(1);
         LuaApi api = mStack.api();
-        if (!api.isTable(table))
-            throw TypeError("table");
         api.pushTableValue(table);
         if (pop)
             api.remove(table);
         return api.getStackSize();
     }
 
-    void TableView::setTableValue(int table)
+    void TableLikeViewBase::setTableValue(int table)
     {
-        mStack.api().setTableEntry(table);
+        LuaApi api = mStack.api();
+        if (!api.isTable(table))
+        {
+            mStack.ensure(2);
+            if (!api.pushMetatable(table) || !hasNewIndex(api))
+                throw TypeError("table");
+        }
+        api.setTableEntry(table);
     }
 
-    void TableView::checkSingleValue(int prev)
+    void TableLikeViewBase::checkSingleValue(int prev)
     {
         const int diff = mStack.getTop() - prev;
         if (diff != 1)
@@ -49,7 +68,7 @@ namespace lat
         mStack.api().setRawTableValue(mIndex, index);
     }
 
-    void TableView::cleanUp(int prev)
+    void TableLikeViewBase::cleanUp(int prev)
     {
         const int diff = mStack.getTop() - prev;
         if (diff > 0)
@@ -70,22 +89,27 @@ namespace lat
         return std::make_pair(mStack.getObject(-2), mStack.getObject(-1));
     }
 
+    Reference TableLikeView::store()
+    {
+        return ObjectView(*this).store();
+    }
+
     TableReference TableView::store()
     {
         return TableReference(ObjectView(*this).store());
     }
 
-    bool TableView::setEnvironment(TableView& environment)
+    bool TableLikeViewBase::setEnvironment(TableView& environment)
     {
         return ObjectView(*this).setEnvironment(environment);
     }
 
-    void TableView::setMetatable(TableView& metatable)
+    void TableLikeViewBase::setMetatable(TableView& metatable)
     {
         ObjectView(*this).setMetatable(metatable);
     }
 
-    std::optional<TableView> TableView::pushMetatable()
+    std::optional<TableView> TableLikeViewBase::pushMetatable()
     {
         return ObjectView(*this).pushMetatable();
     }

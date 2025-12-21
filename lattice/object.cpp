@@ -116,6 +116,13 @@ namespace lat
         return TableView(mStack, mIndex);
     }
 
+    TableLikeView ObjectView::asTableLike() const
+    {
+        if (!mStack.isTableLike(mIndex))
+            throw TypeError("table");
+        return TableLikeView(mStack, mIndex);
+    }
+
     FunctionView ObjectView::asFunction() const
     {
         if (!isFunction())

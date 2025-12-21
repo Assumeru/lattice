@@ -192,4 +192,41 @@ namespace
             EXPECT_EQ(stack.getTop(), 1);
         });
     }
+
+    TEST_F(TableTest, can_index_table_like_usertype)
+    {
+        mState.withStack([](Stack& stack) {
+            auto type = stack.newUserType<TestData>("TestData");
+            type[meta::index] = [](const TestData& data, int index) { return data.mValue + index; };
+            type[meta::newIndex] = [](TestData& data, int index, int value) { data.mValue = index + value; };
+            TestData data(3);
+            TableLikeView table = stack.push(&data).asTableLike();
+            EXPECT_EQ(table.get<int>(1), 1 + data.mValue);
+            EXPECT_EQ(table.get<int>(2), 2 + data.mValue);
+            table[1] = 2;
+            EXPECT_EQ(data.mValue, 3);
+        });
+    }
+
+    TEST_F(TableTest, can_index_table_like_userdata)
+    {
+        mState.withStack([](Stack& stack) {
+            TestData data(3);
+            ObjectView view = stack.push(&data);
+            EXPECT_ANY_THROW(view.asTableLike());
+            TableView mt = *view.pushMetatable();
+            mt[meta::index] = [](const TestData& data, int index) { return data.mValue + index; };
+            TableLikeView table = view.asTableLike();
+            EXPECT_EQ(table.get<int>(1), 1 + data.mValue);
+            EXPECT_EQ(table.get<int>(2), 2 + data.mValue);
+            EXPECT_ANY_THROW(table[3] = 1);
+            mt[meta::newIndex] = [](TestData& data, int index, int value) { data.mValue = index + value; };
+            table[1] = 2;
+            EXPECT_EQ(data.mValue, 3);
+            TableView base = stack.pushTable();
+            base["a"] = view;
+            const int value = base["a"][1];
+            EXPECT_EQ(value, 1 + data.mValue);
+        });
+    }
 }

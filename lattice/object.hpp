@@ -23,6 +23,7 @@ namespace lat
     class FunctionView;
     class Reference;
     class Stack;
+    class TableLikeView;
     class TableView;
     enum class LuaType : int;
 
@@ -58,6 +59,7 @@ namespace lat
         double asFloat() const;
         std::string_view asString() const;
         TableView asTable() const;
+        TableLikeView asTableLike() const;
         FunctionView asFunction() const;
         std::span<std::byte> asUserData() const;
         void* asLightUserData() const;

@@ -19,6 +19,7 @@ namespace lat
     class ObjectView;
     class Reference;
     class TableView;
+    class TableLikeViewBase;
     class UserType;
 
     // Non-owning lua_State wrapper
@@ -46,6 +47,7 @@ namespace lat
         friend class ObjectView;
         friend class Reference;
         friend class State;
+        friend class TableLikeViewBase;
         friend class TableView;
         friend class UserTypeRegistry;
 
@@ -72,6 +74,7 @@ namespace lat
         bool isNumber(int index) const;
         bool isString(int index) const;
         bool isTable(int index) const;
+        bool isTableLike(int index);
         bool isFunction(int index) const;
         bool isCoroutine(int index) const;
         bool isUserData(int index) const;

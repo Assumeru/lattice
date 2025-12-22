@@ -178,11 +178,14 @@ namespace lat
     {
         friend class ObjectView;
         friend class Stack;
+        friend class TableView;
 
         using TableLikeViewBase::TableLikeViewBase;
 
     public:
         Reference store();
+
+        std::ptrdiff_t size();
     };
 
     class TableView : public TableLikeViewBase
@@ -204,6 +207,8 @@ namespace lat
         std::optional<std::pair<ObjectView, ObjectView>> next(ObjectView&);
         TableViewIterator begin();
         TableViewIterator end();
+
+        operator TableLikeView() noexcept { return TableLikeView(mStack, mIndex); }
     };
 
     namespace detail

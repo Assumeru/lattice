@@ -229,4 +229,32 @@ namespace
             EXPECT_EQ(value, 1 + data.mValue);
         });
     }
+
+    TEST_F(TableTest, can_get_table_like_view_size)
+    {
+        mState.withStack([](Stack& stack) {
+            {
+                TableView table = stack.pushTable();
+                EXPECT_EQ(table.size(), 0);
+                table[1] = 1;
+                table[2] = 2;
+                EXPECT_EQ(table.size(), 2);
+                TableLikeView like = table;
+                EXPECT_EQ(like.size(), 2);
+                stack.pop();
+            }
+            {
+                stack.pushUserData(0);
+                ObjectView userdata = stack.getObject(-1);
+                TableView mt = stack.pushTable();
+                userdata.setMetatable(mt);
+                mt[meta::index] = [](ObjectView, int index) { return index; };
+                static_assert(detail::GetFromViewSpecialized<TableLikeView>);
+                TableLikeView like = userdata.as<TableLikeView>();
+                EXPECT_ANY_THROW(like.size());
+                mt[meta::len] = [](ObjectView) { return 123; };
+                EXPECT_EQ(like.size(), 123);
+            }
+        });
+    }
 }

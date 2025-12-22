@@ -75,6 +75,24 @@ namespace lat
             mStack.pop(static_cast<std::uint16_t>(diff));
     }
 
+    std::ptrdiff_t TableLikeView::size()
+    {
+        LuaApi api = mStack.api();
+        if (api.isTable(mIndex))
+            return api.getObjectSize(mIndex);
+        mStack.ensure(2);
+        if (!api.pushMetatable(mIndex))
+            throw TypeError("table");
+        api.pushString(meta::len);
+        api.pushTableValue(-2);
+        mStack.remove(-2);
+        api.pushCopy(mIndex);
+        mStack.protectedCall(1, 1);
+        const std::ptrdiff_t size = mStack.getObject(-1).asInt();
+        mStack.pop();
+        return size;
+    }
+
     std::size_t TableView::size() const
     {
         return mStack.api().getObjectSize(mIndex);

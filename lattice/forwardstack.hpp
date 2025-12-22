@@ -47,6 +47,7 @@ namespace lat
         friend class Reference;
         friend class State;
         friend class TableLikeViewBase;
+        friend class TableLikeView;
         friend class TableView;
         friend class UserTypeRegistry;
 

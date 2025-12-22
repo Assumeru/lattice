@@ -394,6 +394,7 @@ namespace lat
     Value ObjectView::as() const
     {
         using T = std::remove_cvref_t<Value>;
+        using namespace detail;
         if constexpr (std::is_same_v<T, ObjectView>)
         {
             return *this;
@@ -405,11 +406,11 @@ namespace lat
             using OptT = typename T::value_type;
             if (!is<OptT>())
                 return {};
-            return detail::getValue(*this, Type<OptT>{});
+            return getValue(*this, Type<OptT>{});
         }
         else if constexpr (detail::GetFromViewSpecialized<T>)
         {
-            return detail::getValue(*this, Type<T>{});
+            return getValue(*this, Type<T>{});
         }
         else if constexpr (detail::ReferenceWrapper<T>)
         {

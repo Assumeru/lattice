@@ -31,8 +31,7 @@ namespace lat
         Stack(const Stack&) = delete;
         Stack(Stack&&) = delete;
 
-        LuaApi api();
-        const LuaApi api() const;
+        LuaApi api() const;
 
         void protectedCall(int (*)(lua_State*), void*);
         void protectedCall(int, int);

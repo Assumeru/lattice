@@ -136,12 +136,7 @@ namespace lat
             throw std::bad_alloc();
     }
 
-    LuaApi Stack::api()
-    {
-        return LuaApi(*mState);
-    }
-
-    const LuaApi Stack::api() const
+    LuaApi Stack::api() const
     {
         return LuaApi(*mState);
     }

@@ -207,6 +207,7 @@ namespace lat
         std::optional<std::pair<ObjectView, ObjectView>> next(ObjectView&);
         TableViewIterator begin();
         TableViewIterator end();
+        void forEach(FunctionRef<void(ObjectView, ObjectView)>);
 
         operator TableLikeView() noexcept { return TableLikeView(mStack, mIndex); }
     };

@@ -151,6 +151,19 @@ namespace lat
         return TableViewIterator(*this);
     }
 
+    void TableView::forEach(FunctionRef<void(ObjectView, ObjectView)> func)
+    {
+        ObjectView key = mStack.pushNil();
+        const int pos = mStack.getTop();
+        while (auto result = next(key))
+        {
+            func(result->first, result->second);
+            mStack.remove(pos);
+            mStack.remove(pos + 1);
+        }
+        mStack.remove(pos);
+    }
+
     TableViewIterator::TableViewIterator(TableView table)
         : mTable(table)
     {

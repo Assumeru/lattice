@@ -131,6 +131,39 @@ namespace
         });
     }
 
+    TEST_F(TableTest, can_iterate_table_using_foreach)
+    {
+        mState.withStack([](Stack& stack) {
+            TableView table = stack.pushTable();
+            table[1] = 2;
+            table["a"] = 3;
+            table[3] = 4;
+            EXPECT_EQ(stack.getTop(), 1);
+            int count = 0;
+            table.forEach([&](ObjectView key, ObjectView value) {
+                int v = value.as<int>();
+                if (auto k = key.as<std::optional<int>>())
+                {
+                    if (*k == 1)
+                        EXPECT_EQ(v, 2);
+                    else
+                    {
+                        EXPECT_EQ(v, 4);
+                        EXPECT_EQ(k, 3);
+                    }
+                }
+                else
+                {
+                    EXPECT_EQ(key.asString(), "a");
+                    EXPECT_EQ(v, 3);
+                }
+                ++count;
+            });
+            EXPECT_EQ(count, 3);
+            EXPECT_EQ(stack.getTop(), 1);
+        });
+    }
+
     TEST_F(TableTest, can_traverse_get)
     {
         mState.withStack([](Stack& stack) {

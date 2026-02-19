@@ -168,6 +168,16 @@ namespace lat
         return ObjectView(stack, stack.getTop());
     }
 
+    void ObjectView::replaceWith(const ObjectView& view)
+    {
+        if (&view.mStack != &mStack)
+            throw std::runtime_error("same stack object required");
+        LuaApi api = mStack.api();
+        mStack.ensure(1);
+        api.pushCopy(view.mIndex);
+        api.replace(mIndex);
+    }
+
     bool ObjectView::setEnvironment(TableView& environment)
     {
         ObjectView(environment).pushTo(mStack);

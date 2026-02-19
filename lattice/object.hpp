@@ -65,6 +65,7 @@ namespace lat
         void* asLightUserData() const;
 
         ObjectView pushTo(Stack&);
+        void replaceWith(const ObjectView&);
 
         bool setEnvironment(TableView& environment);
         void setMetatable(TableView& metatable);

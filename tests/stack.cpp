@@ -189,4 +189,19 @@ namespace
         });
         EXPECT_EQ(count, 2);
     }
+
+    TEST_F(StackTest, can_replace_stack_value)
+    {
+        mState.withStack([&](Stack& stack) {
+            ObjectView a = stack.pushInteger(1);
+            stack.pushInteger(2);
+            ObjectView c = stack.pushInteger(3);
+            EXPECT_EQ(a.asInt(), 1);
+            const int size = stack.getTop();
+            a.replaceWith(c);
+            EXPECT_EQ(stack.getTop(), size);
+            EXPECT_EQ(a.asInt(), c.asInt());
+            EXPECT_EQ(c.asInt(), 3);
+        });
+    }
 }

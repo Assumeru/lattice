@@ -400,4 +400,9 @@ namespace lat
         void* data = lua.createUserData(size);
         return { reinterpret_cast<std::byte*>(data), size };
     }
+
+    bool Stack::same(int a, int b)
+    {
+        return api().equal(a, b);
+    }
 }

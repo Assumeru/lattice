@@ -66,6 +66,16 @@ namespace lat
     {
         return State::getUserTypeRegistry(*this).createUserType<T, Bases...>(*this, name);
     }
+
+    template <class T, class U>
+    bool Stack::equal(T&& a, U&& b)
+    {
+        push(std::forward<T>(a));
+        push(std::forward<U>(b));
+        const bool eq = same(-2, -1);
+        pop(2);
+        return eq;
+    }
 }
 
 #endif

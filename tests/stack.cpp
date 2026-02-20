@@ -204,4 +204,16 @@ namespace
             EXPECT_EQ(c.asInt(), 3);
         });
     }
+
+    TEST_F(StackTest, can_compare_stack_value)
+    {
+        mState.withStack([&](Stack& stack) {
+            ObjectView a = stack.pushInteger(1);
+            ObjectView b = stack.pushInteger(3);
+            EXPECT_FALSE(stack.same(-1, -2));
+            EXPECT_EQ(stack.same(-1, -2), stack.equal(a, b));
+            EXPECT_TRUE(stack.equal(123, 123));
+            EXPECT_EQ(stack.getTop(), 2);
+        });
+    }
 }

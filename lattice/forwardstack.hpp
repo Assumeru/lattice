@@ -106,6 +106,10 @@ namespace lat
         template <class... Ret>
         auto execute(std::string_view lua, const char* name = nullptr);
 
+        bool same(int, int);
+        template <class T, class U>
+        bool equal(T&&, U&&);
+
         template <class T, class... Bases>
         UserType newUserType(std::string_view name);
     };

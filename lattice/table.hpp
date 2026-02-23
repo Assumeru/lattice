@@ -194,7 +194,7 @@ namespace lat
 
         std::size_t size() const;
 
-        std::optional<std::pair<ObjectView, ObjectView>> next(ObjectView&) const;
+        std::optional<std::pair<ObjectView, ObjectView>> next(const ObjectView&) const;
         TableViewIterator begin() const;
         TableViewIterator end() const;
         void forEach(FunctionRef<void(ObjectView, ObjectView)>) const;

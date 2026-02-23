@@ -98,7 +98,7 @@ namespace lat
         return mStack.api().getObjectSize(mIndex);
     }
 
-    std::optional<std::pair<ObjectView, ObjectView>> TableView::next(ObjectView& key) const
+    std::optional<std::pair<ObjectView, ObjectView>> TableView::next(const ObjectView& key) const
     {
         mStack.ensure(2);
         key.pushTo(mStack);
@@ -119,7 +119,7 @@ namespace lat
 
     TableViewIterator TableView::begin() const
     {
-        ObjectView key = mStack.pushNil();
+        const ObjectView key = mStack.pushNil();
         if (auto result = next(key))
         {
             Reference keyRef = result->first.store();
@@ -138,15 +138,14 @@ namespace lat
 
     void TableView::forEach(FunctionRef<void(ObjectView, ObjectView)> func) const
     {
-        ObjectView key = mStack.pushNil();
-        const int pos = mStack.getTop();
+        const ObjectView key = mStack.pushNil();
         while (auto result = next(key))
         {
             func(result->first, result->second);
-            mStack.remove(pos);
-            mStack.remove(pos + 1);
+            mStack.remove(key.getIndex());
+            mStack.remove(key.getIndex() + 1);
         }
-        mStack.remove(pos);
+        mStack.remove(key.getIndex());
     }
 
     TableViewIterator::TableViewIterator(TableView table)

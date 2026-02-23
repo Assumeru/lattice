@@ -46,12 +46,13 @@ namespace lat
         bool setEnvironment(const TableView& environment) const;
         void setMetatable(const TableView& metatable) const;
         std::optional<TableView> pushMetatable() const;
+
+        int getIndex() const { return mIndex; }
+        Stack& getStack() const { return mStack; }
     };
 
     class ObjectView : public ObjectViewBase
     {
-        friend class Reference;
-
     public:
         ObjectView(Stack& stack, int index)
             : ObjectViewBase(stack, index)

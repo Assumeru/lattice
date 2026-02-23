@@ -323,14 +323,10 @@ namespace lat
             }
             else if constexpr (std::is_same_v<T, ObjectView>)
             {
-                if constexpr (std::is_const_v<V>)
-                    static_assert(false, "cannot push const object");
                 value.pushTo(stack);
             }
             else if constexpr (std::is_convertible_v<T, ObjectView>)
             {
-                if constexpr (std::is_const_v<V>)
-                    static_assert(false, "cannot push const object");
                 ObjectView(value).pushTo(stack);
             }
             else if constexpr (light)

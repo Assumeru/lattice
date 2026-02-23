@@ -86,7 +86,7 @@ namespace lat
         }
         else
         {
-            TableView registry = object.mStack.getObject(LUA_REGISTRYINDEX).asTable();
+            TableView registry = object.getStack().getObject(LUA_REGISTRYINDEX).asTable();
             registry.setRaw(mRef, object);
         }
     }

@@ -30,21 +30,6 @@ namespace lat
         return FunctionReference(ObjectView(*this).store());
     }
 
-    bool FunctionView::setEnvironment(const TableView& environment) const
-    {
-        return ObjectView(*this).setEnvironment(environment);
-    }
-
-    void FunctionView::setMetatable(const TableView& metatable) const
-    {
-        ObjectView(*this).setMetatable(metatable);
-    }
-
-    std::optional<TableView> FunctionView::pushMetatable() const
-    {
-        return ObjectView(*this).pushMetatable();
-    }
-
     namespace
     {
         int dumpFunction(lua_State*, const void* buffer, std::size_t size, void* output)

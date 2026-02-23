@@ -31,14 +31,10 @@ namespace lat
         std::string_view get() const { return mCode; }
     };
 
-    class FunctionView
+    class FunctionView : public ObjectViewBase
     {
-        Stack& mStack;
-        int mIndex;
-
         FunctionView(Stack& stack, int index)
-            : mStack(stack)
-            , mIndex(index)
+            : ObjectViewBase(stack, index)
         {
         }
 
@@ -127,15 +123,9 @@ namespace lat
         template <class... Ret>
         auto returning() const;
 
-        operator ObjectView() const noexcept { return ObjectView(mStack, mIndex); }
-
         FunctionReference store() const;
 
         ByteCode dump() const;
-
-        bool setEnvironment(const TableView& environment) const;
-        void setMetatable(const TableView& metatable) const;
-        std::optional<TableView> pushMetatable() const;
     };
 
     // Workaround for GCC < 14 https://gcc.gnu.org/bugzilla/show_bug.cgi?id=71954

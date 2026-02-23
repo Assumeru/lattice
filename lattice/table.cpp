@@ -117,21 +117,6 @@ namespace lat
         return TableReference(ObjectView(*this).store());
     }
 
-    bool TableLikeViewBase::setEnvironment(const TableView& environment) const
-    {
-        return ObjectView(*this).setEnvironment(environment);
-    }
-
-    void TableLikeViewBase::setMetatable(const TableView& metatable) const
-    {
-        ObjectView(*this).setMetatable(metatable);
-    }
-
-    std::optional<TableView> TableLikeViewBase::pushMetatable() const
-    {
-        return ObjectView(*this).pushMetatable();
-    }
-
     TableViewIterator TableView::begin() const
     {
         ObjectView key = mStack.pushNil();

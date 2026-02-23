@@ -21,23 +21,40 @@ namespace lat
     constexpr inline Nil nil{};
 
     class FunctionView;
+    class ObjectView;
     class Reference;
     class Stack;
     class TableLikeView;
     class TableView;
     enum class LuaType : int;
 
-    class ObjectView
+    class ObjectViewBase
     {
+    protected:
         Stack& mStack;
         int mIndex;
 
+        ObjectViewBase(Stack& stack, int index)
+            : mStack(stack)
+            , mIndex(index)
+        {
+        }
+
+    public:
+        operator ObjectView() const noexcept;
+
+        bool setEnvironment(const TableView& environment) const;
+        void setMetatable(const TableView& metatable) const;
+        std::optional<TableView> pushMetatable() const;
+    };
+
+    class ObjectView : public ObjectViewBase
+    {
         friend class Reference;
 
     public:
         ObjectView(Stack& stack, int index)
-            : mStack(stack)
-            , mIndex(index)
+            : ObjectViewBase(stack, index)
         {
         }
 
@@ -67,10 +84,6 @@ namespace lat
         ObjectView pushTo(Stack&) const;
         void replaceWith(const ObjectView&) const;
 
-        bool setEnvironment(const TableView& environment) const;
-        void setMetatable(const TableView& metatable) const;
-        std::optional<TableView> pushMetatable() const;
-
         Reference store() const;
 
         template <class T>
@@ -85,6 +98,11 @@ namespace lat
     inline bool operator==(const Nil&, const ObjectView& object)
     {
         return object.isNil();
+    }
+
+    inline ObjectViewBase::operator ObjectView() const noexcept
+    {
+        return ObjectView(mStack, mIndex);
     }
 }
 

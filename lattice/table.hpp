@@ -49,15 +49,11 @@ namespace lat
     class IndexedTableView;
     class TableViewIterator;
 
-    class TableLikeViewBase
+    class TableLikeViewBase : public ObjectViewBase
     {
     protected:
-        Stack& mStack;
-        int mIndex;
-
         TableLikeViewBase(Stack& stack, int index)
-            : mStack(stack)
-            , mIndex(index)
+            : ObjectViewBase(stack, index)
         {
         }
 
@@ -146,12 +142,6 @@ namespace lat
         friend class IndexedTableView;
 
     public:
-        operator ObjectView() const noexcept { return ObjectView(mStack, mIndex); }
-
-        bool setEnvironment(const TableView& environment) const;
-        void setMetatable(const TableView& metatable) const;
-        std::optional<TableView> pushMetatable() const;
-
         template <detail::SingleStackPull Value = ObjectView, class Key, class... Path>
         Value get(Key&& key, Path&&... args) const
         {

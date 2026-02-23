@@ -178,19 +178,19 @@ namespace lat
         api.replace(mIndex);
     }
 
-    bool ObjectView::setEnvironment(const TableView& environment) const
+    bool ObjectViewBase::setEnvironment(const TableView& environment) const
     {
         ObjectView(environment).pushTo(mStack);
         return mStack.api().setEnvTable(mIndex);
     }
 
-    void ObjectView::setMetatable(const TableView& metatable) const
+    void ObjectViewBase::setMetatable(const TableView& metatable) const
     {
         ObjectView(metatable).pushTo(mStack);
         mStack.api().setMetatable(mIndex);
     }
 
-    std::optional<TableView> ObjectView::pushMetatable() const
+    std::optional<TableView> ObjectViewBase::pushMetatable() const
     {
         mStack.ensure(1);
         if (mStack.api().pushMetatable(mIndex))

@@ -44,6 +44,7 @@ namespace lat
         friend class FunctionView;
         friend struct MainStack;
         friend class ObjectView;
+        friend class ObjectViewBase;
         friend class Reference;
         friend class State;
         friend class TableLikeViewBase;

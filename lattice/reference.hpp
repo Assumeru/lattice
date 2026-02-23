@@ -47,10 +47,9 @@ namespace lat
         bool isValid() const;
 
         ObjectView pushTo(Stack&) const;
-        void onStack(FunctionRef<void(Stack&, ObjectView)>);
+        void onStack(FunctionRef<void(Stack&, ObjectView)>) const;
 
-        void operator=(ObjectView&);
-        ObjectView operator=(ObjectView&&);
+        void operator=(const ObjectView&);
 
         friend bool operator==(const Reference&, const Reference&);
     };
@@ -72,10 +71,9 @@ namespace lat
         bool isValid() const;
 
         FunctionView pushTo(Stack&) const;
-        void onStack(FunctionRef<void(Stack&, FunctionView)>);
+        void onStack(FunctionRef<void(Stack&, FunctionView)>) const;
 
-        void operator=(FunctionView&);
-        FunctionView operator=(FunctionView&&);
+        void operator=(const FunctionView&);
 
         friend bool operator==(const Reference&, const FunctionReference&);
         friend bool operator==(const FunctionReference&, const FunctionReference&);
@@ -98,10 +96,9 @@ namespace lat
         bool isValid() const;
 
         TableView pushTo(Stack&) const;
-        void onStack(FunctionRef<void(Stack&, TableView)>);
+        void onStack(FunctionRef<void(Stack&, TableView)>) const;
 
-        void operator=(TableView&);
-        TableView operator=(TableView&&);
+        void operator=(const TableView&);
 
         friend bool operator==(const Reference&, const TableReference&);
         friend bool operator==(const TableReference&, const TableReference&);

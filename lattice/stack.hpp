@@ -12,7 +12,7 @@ namespace lat
 {
     template <class Path>
     template <class Ret, class... Args>
-    Ret IndexedTableView<Path>::invoke(Args&&... args)
+    Ret IndexedTableView<Path>::invoke(Args&&... args) const
     {
         FunctionView function = *this;
         return function.invokeImpl<false, Ret, Args...>(std::forward<Args>(args)...);

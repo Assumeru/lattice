@@ -59,7 +59,7 @@ namespace lat
         return registry.getRaw(mRef);
     }
 
-    void Reference::onStack(FunctionRef<void(Stack&, ObjectView)> function)
+    void Reference::onStack(FunctionRef<void(Stack&, ObjectView)> function) const
     {
         if (mRef == LUA_NOREF || !mState)
             throw std::runtime_error("invalid reference");
@@ -69,7 +69,7 @@ namespace lat
         });
     }
 
-    void Reference::operator=(ObjectView& object)
+    void Reference::operator=(const ObjectView& object)
     {
         if (!mState)
         {
@@ -108,13 +108,6 @@ namespace lat
         return *this = std::move(other.mReference);
     }
 
-    ObjectView Reference::operator=(ObjectView&& object)
-    {
-        ObjectView view = object;
-        *this = view;
-        return view;
-    }
-
     FunctionReference::FunctionReference(Reference&& ref)
         : mReference(std::move(ref))
     {
@@ -135,21 +128,14 @@ namespace lat
         return mReference.pushTo(stack).asFunction();
     }
 
-    void FunctionReference::onStack(FunctionRef<void(Stack&, FunctionView)> function)
+    void FunctionReference::onStack(FunctionRef<void(Stack&, FunctionView)> function) const
     {
         mReference.onStack([&](Stack& stack, ObjectView view) { function(stack, view.asFunction()); });
     }
 
-    void FunctionReference::operator=(FunctionView& object)
+    void FunctionReference::operator=(const FunctionView& object)
     {
         mReference = ObjectView(object);
-    }
-
-    FunctionView FunctionReference::operator=(FunctionView&& object)
-    {
-        FunctionView view = object;
-        *this = view;
-        return view;
     }
 
     TableReference::TableReference(Reference&& ref)
@@ -172,21 +158,14 @@ namespace lat
         return mReference.pushTo(stack).asTable();
     }
 
-    void TableReference::onStack(FunctionRef<void(Stack&, TableView)> function)
+    void TableReference::onStack(FunctionRef<void(Stack&, TableView)> function) const
     {
         mReference.onStack([&](Stack& stack, ObjectView view) { function(stack, view.asTable()); });
     }
 
-    void TableReference::operator=(TableView& object)
+    void TableReference::operator=(const TableView& object)
     {
         mReference = ObjectView(object);
-    }
-
-    TableView TableReference::operator=(TableView&& object)
-    {
-        TableView view = object;
-        *this = view;
-        return view;
     }
 
     void swap(Reference& l, Reference& r)

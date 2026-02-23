@@ -20,7 +20,7 @@ namespace lat
         }
     }
 
-    int TableLikeViewBase::pushTableValue(int table, bool pop)
+    int TableLikeViewBase::pushTableValue(int table, bool pop) const
     {
         if (!mStack.isTableLike(table))
             throw TypeError("table");
@@ -32,7 +32,7 @@ namespace lat
         return api.getStackSize();
     }
 
-    void TableLikeViewBase::setTableValue(int table)
+    void TableLikeViewBase::setTableValue(int table) const
     {
         LuaApi api = mStack.api();
         if (!api.isTable(table))
@@ -44,7 +44,7 @@ namespace lat
         api.setTableEntry(table);
     }
 
-    void TableLikeViewBase::checkSingleValue(int prev)
+    void TableLikeViewBase::checkSingleValue(int prev) const
     {
         const int diff = mStack.getTop() - prev;
         if (diff != 1)
@@ -55,27 +55,27 @@ namespace lat
         }
     }
 
-    ObjectView TableView::getRaw(int index)
+    ObjectView TableView::getRaw(int index) const
     {
         mStack.ensure(1);
         mStack.api().pushRawTableValue(mIndex, index);
         return mStack.getObject(-1);
     }
 
-    void TableView::setRaw(int index, ObjectView& value)
+    void TableView::setRaw(int index, const ObjectView& value) const
     {
         value.pushTo(mStack);
         mStack.api().setRawTableValue(mIndex, index);
     }
 
-    void TableLikeViewBase::cleanUp(int prev)
+    void TableLikeViewBase::cleanUp(int prev) const
     {
         const int diff = mStack.getTop() - prev;
         if (diff > 0)
             mStack.pop(static_cast<std::uint16_t>(diff));
     }
 
-    std::ptrdiff_t TableLikeView::size()
+    std::ptrdiff_t TableLikeView::size() const
     {
         LuaApi api = mStack.api();
         if (api.isTable(mIndex))
@@ -98,7 +98,7 @@ namespace lat
         return mStack.api().getObjectSize(mIndex);
     }
 
-    std::optional<std::pair<ObjectView, ObjectView>> TableView::next(ObjectView& key)
+    std::optional<std::pair<ObjectView, ObjectView>> TableView::next(ObjectView& key) const
     {
         mStack.ensure(2);
         key.pushTo(mStack);
@@ -107,32 +107,32 @@ namespace lat
         return std::make_pair(mStack.getObject(-2), mStack.getObject(-1));
     }
 
-    Reference TableLikeView::store()
+    Reference TableLikeView::store() const
     {
         return ObjectView(*this).store();
     }
 
-    TableReference TableView::store()
+    TableReference TableView::store() const
     {
         return TableReference(ObjectView(*this).store());
     }
 
-    bool TableLikeViewBase::setEnvironment(TableView& environment)
+    bool TableLikeViewBase::setEnvironment(const TableView& environment) const
     {
         return ObjectView(*this).setEnvironment(environment);
     }
 
-    void TableLikeViewBase::setMetatable(TableView& metatable)
+    void TableLikeViewBase::setMetatable(const TableView& metatable) const
     {
         ObjectView(*this).setMetatable(metatable);
     }
 
-    std::optional<TableView> TableLikeViewBase::pushMetatable()
+    std::optional<TableView> TableLikeViewBase::pushMetatable() const
     {
         return ObjectView(*this).pushMetatable();
     }
 
-    TableViewIterator TableView::begin()
+    TableViewIterator TableView::begin() const
     {
         ObjectView key = mStack.pushNil();
         if (auto result = next(key))
@@ -146,12 +146,12 @@ namespace lat
         return end();
     }
 
-    TableViewIterator TableView::end()
+    TableViewIterator TableView::end() const
     {
         return TableViewIterator(*this);
     }
 
-    void TableView::forEach(FunctionRef<void(ObjectView, ObjectView)> func)
+    void TableView::forEach(FunctionRef<void(ObjectView, ObjectView)> func) const
     {
         ObjectView key = mStack.pushNil();
         const int pos = mStack.getTop();

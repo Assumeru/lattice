@@ -8,14 +8,14 @@
 
 namespace lat
 {
-    void FunctionView::cleanUp(int prev)
+    void FunctionView::cleanUp(int prev) const
     {
         const int diff = mStack.getTop() - prev;
         if (diff > 0)
             mStack.pop(static_cast<std::uint16_t>(diff));
     }
 
-    void FunctionView::call(const int prev, int resCount)
+    void FunctionView::call(const int prev, int resCount) const
     {
         const int argCount = mStack.getTop() - prev;
         if (argCount < 0)
@@ -25,22 +25,22 @@ namespace lat
         mStack.protectedCall(argCount, resCount);
     }
 
-    FunctionReference FunctionView::store()
+    FunctionReference FunctionView::store() const
     {
         return FunctionReference(ObjectView(*this).store());
     }
 
-    bool FunctionView::setEnvironment(TableView& environment)
+    bool FunctionView::setEnvironment(const TableView& environment) const
     {
         return ObjectView(*this).setEnvironment(environment);
     }
 
-    void FunctionView::setMetatable(TableView& metatable)
+    void FunctionView::setMetatable(const TableView& metatable) const
     {
         ObjectView(*this).setMetatable(metatable);
     }
 
-    std::optional<TableView> FunctionView::pushMetatable()
+    std::optional<TableView> FunctionView::pushMetatable() const
     {
         return ObjectView(*this).pushMetatable();
     }
@@ -55,7 +55,7 @@ namespace lat
         }
     }
 
-    ByteCode FunctionView::dump()
+    ByteCode FunctionView::dump() const
     {
         ObjectView(*this).pushTo(mStack);
         ByteCode code;

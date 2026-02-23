@@ -42,8 +42,8 @@ namespace lat
         {
         }
 
-        void cleanUp(int prev);
-        void call(int prev, int resCount);
+        void cleanUp(int prev) const;
+        void call(int prev, int resCount) const;
 
         friend class ObjectView;
         friend class Stack;
@@ -54,7 +54,7 @@ namespace lat
         constexpr static bool allSpecialized = false;
 
         template <class... Types>
-        std::tuple<Types...> pullTuple(Type<std::tuple<Types...>>, int pos)
+        std::tuple<Types...> pullTuple(Type<std::tuple<Types...>>, int pos) const
         {
             // Use braced initializer list to force left-to-right evaluation
             auto values = std::tuple<Types...>{ detail::pullFromStack<Types>(mStack, pos)... };
@@ -63,7 +63,7 @@ namespace lat
         }
 
         template <bool copy, class Ret, class... Args>
-        Ret invokeImpl(Args&&... args)
+        Ret invokeImpl(Args&&... args) const
         {
             const int top = mStack.getTop();
             constexpr int resCount = [] {
@@ -113,29 +113,29 @@ namespace lat
 
     public:
         template <class Ret, class... Args>
-        Ret invoke(Args&&... args)
+        Ret invoke(Args&&... args) const
         {
             return invokeImpl<true, Ret>(std::forward<Args>(args)...);
         }
 
         template <class... Args>
-        void operator()(Args&&... args)
+        void operator()(Args&&... args) const
         {
             invoke<void>(std::forward<Args>(args)...);
         }
 
         template <class... Ret>
-        auto returning();
+        auto returning() const;
 
-        operator ObjectView() noexcept { return ObjectView(mStack, mIndex); }
+        operator ObjectView() const noexcept { return ObjectView(mStack, mIndex); }
 
-        FunctionReference store();
+        FunctionReference store() const;
 
-        ByteCode dump();
+        ByteCode dump() const;
 
-        bool setEnvironment(TableView& environment);
-        void setMetatable(TableView& metatable);
-        std::optional<TableView> pushMetatable();
+        bool setEnvironment(const TableView& environment) const;
+        void setMetatable(const TableView& metatable) const;
+        std::optional<TableView> pushMetatable() const;
     };
 
     // Workaround for GCC < 14 https://gcc.gnu.org/bugzilla/show_bug.cgi?id=71954
@@ -174,7 +174,7 @@ namespace lat
     };
 
     template <class... Ret>
-    auto FunctionView::returning()
+    auto FunctionView::returning() const
     {
         constexpr std::size_t count = sizeof...(Ret);
         if constexpr (count == 0)
@@ -205,7 +205,7 @@ namespace lat
         template <>
         constexpr inline bool pullsOneValue<FunctionView> = true;
 
-        template <class T, class U = std::remove_reference_t<T>>
+        template <class T, class U = std::remove_cvref_t<T>>
         concept ReturningFunction = std::is_same_v<U, ReturningFunctionView<typename U::type>>;
     }
 

@@ -61,13 +61,13 @@ namespace lat
         {
         }
 
-        int pushTableValue(int table, bool pop);
-        void setTableValue(int table);
-        void checkSingleValue(int prev);
-        void cleanUp(int prev);
+        int pushTableValue(int table, bool pop) const;
+        void setTableValue(int table) const;
+        void checkSingleValue(int prev) const;
+        void cleanUp(int prev) const;
 
         template <class T>
-        void pushSingleObject(T&& object)
+        void pushSingleObject(T&& object) const
         {
             const int prev = mStack.getTop();
             detail::pushToStack(mStack, std::forward<T>(object));
@@ -75,7 +75,7 @@ namespace lat
         }
 
         template <bool Traverse, detail::SingleStackPull Value, class... Path>
-        Value getImpl(Path&&... path)
+        Value getImpl(Path&&... path) const
         {
             const int top = mStack.getTop();
             try
@@ -111,7 +111,7 @@ namespace lat
         }
 
         template <class Value, class... Path>
-        void setImpl(Value&& value, Path&&... path)
+        void setImpl(Value&& value, Path&&... path) const
         {
             constexpr std::size_t count = sizeof...(path);
             const int top = mStack.getTop();
@@ -146,32 +146,32 @@ namespace lat
         friend class IndexedTableView;
 
     public:
-        operator ObjectView() noexcept { return ObjectView(mStack, mIndex); }
+        operator ObjectView() const noexcept { return ObjectView(mStack, mIndex); }
 
-        bool setEnvironment(TableView& environment);
-        void setMetatable(TableView& metatable);
-        std::optional<TableView> pushMetatable();
+        bool setEnvironment(const TableView& environment) const;
+        void setMetatable(const TableView& metatable) const;
+        std::optional<TableView> pushMetatable() const;
 
         template <detail::SingleStackPull Value = ObjectView, class Key, class... Path>
-        Value get(Key&& key, Path&&... args)
+        Value get(Key&& key, Path&&... args) const
         {
             return getImpl<false, Value>(std::forward<Key>(key), std::forward<Path>(args)...);
         }
 
         template <detail::SingleStackPull Value = ObjectView, class Key, class... Path>
-        std::optional<Value> traverseGet(Key&& key, Path&&... args)
+        std::optional<Value> traverseGet(Key&& key, Path&&... args) const
         {
             return getImpl<true, std::optional<Value>>(std::forward<Key>(key), std::forward<Path>(args)...);
         }
 
         template <class Value, class Key, class... Path>
-        void set(Value&& value, Key&& key, Path&&... args)
+        void set(Value&& value, Key&& key, Path&&... args) const
         {
             setImpl(std::forward<Value>(value), std::forward<Key>(key), std::forward<Path>(args)...);
         }
 
         template <class Key>
-        auto operator[](Key&& key);
+        auto operator[](Key&& key) const;
     };
 
     class TableLikeView : public TableLikeViewBase
@@ -183,9 +183,9 @@ namespace lat
         using TableLikeViewBase::TableLikeViewBase;
 
     public:
-        Reference store();
+        Reference store() const;
 
-        std::ptrdiff_t size();
+        std::ptrdiff_t size() const;
     };
 
     class TableView : public TableLikeViewBase
@@ -197,24 +197,24 @@ namespace lat
         using TableLikeViewBase::TableLikeViewBase;
 
     public:
-        TableReference store();
+        TableReference store() const;
 
-        ObjectView getRaw(int);
-        void setRaw(int, ObjectView&);
+        ObjectView getRaw(int) const;
+        void setRaw(int, const ObjectView&) const;
 
         std::size_t size() const;
 
-        std::optional<std::pair<ObjectView, ObjectView>> next(ObjectView&);
-        TableViewIterator begin();
-        TableViewIterator end();
-        void forEach(FunctionRef<void(ObjectView, ObjectView)>);
+        std::optional<std::pair<ObjectView, ObjectView>> next(ObjectView&) const;
+        TableViewIterator begin() const;
+        TableViewIterator end() const;
+        void forEach(FunctionRef<void(ObjectView, ObjectView)>) const;
 
-        operator TableLikeView() noexcept { return TableLikeView(mStack, mIndex); }
+        operator TableLikeView() const noexcept { return TableLikeView(mStack, mIndex); }
     };
 
     namespace detail
     {
-        template <class T, class U = std::remove_reference_t<T>>
+        template <class T, class U = std::remove_cvref_t<T>>
         concept IndexedTable = std::is_same_v<U, IndexedTableView<typename U::type>>;
     }
 
@@ -230,7 +230,7 @@ namespace lat
         {
         }
 
-        void pop() { mTable.mStack.pop(); }
+        void pop() const { mTable.mStack.pop(); }
 
         friend class TableLikeViewBase;
         template <class>
@@ -242,27 +242,27 @@ namespace lat
         using type = Path;
 
         template <class Key>
-        auto operator[](Key&& key)
+        auto operator[](Key&& key) const
         {
             auto path = std::tuple_cat(mPath, std::make_tuple<Key>(std::forward<Key>(key)));
             return IndexedTableView<decltype(path)>(mTable, std::move(path));
         }
 
         template <detail::SingleStackPull T = ObjectView>
-        auto get()
+        auto get() const
         {
             return std::apply(
                 [&](auto&&... path) { return mTable.get<T>(std::forward<decltype(path)>(path)...); }, mPath);
         }
 
         template <detail::SingleStackPull T>
-        operator T()
+        operator T() const
         {
             return get<T>();
         }
 
         template <class Value>
-        void set(Value&& value)
+        void set(Value&& value) const
         {
             std::apply(
                 [&](auto&&... path) { mTable.set(std::forward<Value>(value), std::forward<decltype(path)>(path)...); },
@@ -276,11 +276,11 @@ namespace lat
         }
 
         template <class Ret = void, class... Args>
-        Ret invoke(Args&&... args);
+        Ret invoke(Args&&... args) const;
     };
 
     template <class Key>
-    auto TableLikeViewBase::operator[](Key&& key)
+    auto TableLikeViewBase::operator[](Key&& key) const
     {
         return IndexedTableView(*this, std::make_tuple<Key>(std::forward<Key>(key)));
     }

@@ -64,14 +64,14 @@ namespace lat
         std::span<std::byte> asUserData() const;
         void* asLightUserData() const;
 
-        ObjectView pushTo(Stack&);
-        void replaceWith(const ObjectView&);
+        ObjectView pushTo(Stack&) const;
+        void replaceWith(const ObjectView&) const;
 
-        bool setEnvironment(TableView& environment);
-        void setMetatable(TableView& metatable);
-        std::optional<TableView> pushMetatable();
+        bool setEnvironment(const TableView& environment) const;
+        void setMetatable(const TableView& metatable) const;
+        std::optional<TableView> pushMetatable() const;
 
-        Reference store();
+        Reference store() const;
 
         template <class T>
         bool is() const;

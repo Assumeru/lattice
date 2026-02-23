@@ -147,7 +147,7 @@ namespace lat
         return mStack.api().asUserData(mIndex);
     }
 
-    ObjectView ObjectView::pushTo(Stack& stack)
+    ObjectView ObjectView::pushTo(Stack& stack) const
     {
         const bool sameStack = [&] {
             if (stack.mState == mStack.mState)
@@ -168,7 +168,7 @@ namespace lat
         return ObjectView(stack, stack.getTop());
     }
 
-    void ObjectView::replaceWith(const ObjectView& view)
+    void ObjectView::replaceWith(const ObjectView& view) const
     {
         if (&view.mStack != &mStack)
             throw std::runtime_error("same stack object required");
@@ -178,19 +178,19 @@ namespace lat
         api.replace(mIndex);
     }
 
-    bool ObjectView::setEnvironment(TableView& environment)
+    bool ObjectView::setEnvironment(const TableView& environment) const
     {
         ObjectView(environment).pushTo(mStack);
         return mStack.api().setEnvTable(mIndex);
     }
 
-    void ObjectView::setMetatable(TableView& metatable)
+    void ObjectView::setMetatable(const TableView& metatable) const
     {
         ObjectView(metatable).pushTo(mStack);
         mStack.api().setMetatable(mIndex);
     }
 
-    std::optional<TableView> ObjectView::pushMetatable()
+    std::optional<TableView> ObjectView::pushMetatable() const
     {
         mStack.ensure(1);
         if (mStack.api().pushMetatable(mIndex))
@@ -198,7 +198,7 @@ namespace lat
         return {};
     }
 
-    Reference ObjectView::store()
+    Reference ObjectView::store() const
     {
         return mStack.store(mIndex);
     }
